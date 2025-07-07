@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert, SafeAreaView, Image } from 'react-native';
 import colors from '../theme';
+import { mockHostels, mockRooms, mockBookings, mockPayments } from '../data/mockData';
 
 const TABS = [
   { label: '📊 Overview', key: 'overview' },
@@ -9,33 +10,13 @@ const TABS = [
   { label: '📆 Approve Bookings', key: 'bookings' },
   { label: '💳 Payment Records', key: 'payments' },
 ];
-const mockOverview = [
-  { id: '1', label: 'Total Bookings', value: 32 },
-  { id: '2', label: 'Revenue', value: '$2,300' },
-];
-const initialHostels = [
-  { id: '1', name: 'Jubilee Hostel', gender: 'Male', rooms: 50 },
-  { id: '2', name: 'Addes Hostel', gender: 'Female', rooms: 30 },
-];
-const initialBookings = [
-  { id: 'b1', student: 'Gilbert', hostel: 'Jubilee Hostel', room: 'A1', status: 'Pending' },
-  { id: 'b2', student: 'Jane', hostel: 'Addes Hostel', room: 'B2', status: 'Pending' },
-];
-const mockPayments = [
-  { id: 'p1', student: 'Gilbert', amount: 300, method: 'Mobile Money', date: '2024-07-07' },
-  { id: 'p2', student: 'Jane', amount: 300, method: 'Credit Card', date: '2024-07-06' },
-];
-const initialRooms = [
-  { id: 'r1', hostelId: '1', name: 'Room A1', type: 'Double', price: 300, capacity: 2, occupied: 1 },
-  { id: 'r2', hostelId: '1', name: 'Room D4', type: '4-m 1', price: 300, capacity: 4, occupied: 3 },
-  { id: 'r3', hostelId: '2', name: 'Room B2', type: 'Double', price: 300, capacity: 2, occupied: 2 },
-];
 
 export default function AdminDashboardScreen() {
   const [activeTab, setActiveTab] = useState(0);
-  const [hostels, setHostels] = useState(initialHostels);
-  const [bookings, setBookings] = useState(initialBookings);
-  const [rooms, setRooms] = useState(initialRooms);
+  const [hostels, setHostels] = useState(mockHostels);
+  const [bookings, setBookings] = useState(mockBookings);
+  const [rooms, setRooms] = useState(mockRooms);
+  const [payments, setPayments] = useState(mockPayments);
   const [modalVisible, setModalVisible] = useState(false);
   const [editHostel, setEditHostel] = useState(null);
   const [hostelForm, setHostelForm] = useState({ name: '', gender: '', rooms: '' });
@@ -132,18 +113,26 @@ export default function AdminDashboardScreen() {
         </View>
         <View style={styles.content}>
           {activeTab === 0 && (
-            <FlatList
-              data={mockOverview}
-              keyExtractor={item => item.id}
-              horizontal
-              renderItem={({ item }) => (
-                <View style={styles.card}>
-                  <Text style={styles.cardValue}>{item.value}</Text>
-                  <Text style={styles.cardLabel}>{item.label}</Text>
-                </View>
-              )}
-              contentContainerStyle={{ paddingVertical: 16 }}
-            />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 16 }}>
+              <View style={styles.card}>
+                <Text style={styles.cardValue}>{hostels.length}</Text>
+                <Text style={styles.cardLabel}>Hostels</Text>
+              </View>
+              <View style={styles.card}>
+                <Text style={styles.cardValue}>{rooms.length}</Text>
+                <Text style={styles.cardLabel}>Rooms</Text>
+              </View>
+              <View style={styles.card}>
+                <Text style={styles.cardValue}>{bookings.filter(b => b.status === 'pending').length}</Text>
+                <Text style={styles.cardLabel}>Pending Bookings</Text>
+              </View>
+              <View style={styles.card}>
+                <Text style={styles.cardValue}>
+                  ${payments.filter(p => p.status === 'paid').reduce((sum, p) => sum + (p.amount || 0), 0)}
+                </Text>
+                <Text style={styles.cardLabel}>Total Paid</Text>
+              </View>
+            </View>
           )}
           {activeTab === 1 && (
             <View style={{ flex: 1 }}>
@@ -155,8 +144,15 @@ export default function AdminDashboardScreen() {
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                   <View style={styles.hostelCard}>
+                    {item.image ? (
+                      <View style={{ alignItems: 'center', marginBottom: 8 }}>
+                        <Image source={{ uri: item.image }} style={{ width: 120, height: 80, borderRadius: 12, backgroundColor: '#eee' }} resizeMode="cover" />
+                      </View>
+                    ) : null}
                     <Text style={styles.hostelName}>{item.name}</Text>
-                    <Text style={styles.hostelInfo}>Gender: {item.gender} | Rooms: {item.rooms}</Text>
+                    <Text style={styles.hostelInfo}>{item.address}</Text>
+                    <Text style={styles.hostelInfo}>Manager: {item.manager} | Phone: {item.phone}</Text>
+                    <Text style={styles.hostelInfo}>Rooms: {rooms.filter(r => r.hostelId === item.id).length}</Text>
                     <View style={styles.hostelActions}>
                       <TouchableOpacity onPress={() => openEditHostel(item)} accessible={true} accessibilityLabel={`Edit ${item.name}`} activeOpacity={0.7}><Text style={styles.editBtn}>Edit</Text></TouchableOpacity>
                       <TouchableOpacity onPress={() => deleteHostel(item.id)} accessible={true} accessibilityLabel={`Delete ${item.name}`} activeOpacity={0.7}><Text style={styles.deleteBtn}>Delete</Text></TouchableOpacity>
@@ -230,7 +226,21 @@ export default function AdminDashboardScreen() {
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                   <View style={styles.roomCard}>
-                    <Text style={styles.roomName}>{item.name}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                      <Text style={styles.roomName}>{item.name}</Text>
+                      <View style={{
+                        marginLeft: 10,
+                        backgroundColor: item.status === 'available' ? '#4CAF50' : '#F44336',
+                        borderRadius: 6,
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        alignSelf: 'flex-start',
+                      }}>
+                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>
+                          {item.status === 'available' ? 'Available' : 'Taken'}
+                        </Text>
+                      </View>
+                    </View>
                     <Text style={styles.roomInfo}>Hostel: {hostels.find(h => h.id === item.hostelId)?.name || 'N/A'}</Text>
                     <Text style={styles.roomInfo}>Type: {item.type} | Price: ${item.price}</Text>
                     <Text style={styles.roomInfo}>Capacity: {item.capacity} | Occupied: {item.occupied}</Text>
@@ -313,31 +323,73 @@ export default function AdminDashboardScreen() {
           )}
           {activeTab === 3 && (
             <FlatList
-              data={bookings.filter(b => b.status === 'Pending')}
+              data={bookings.filter(b => b.status === 'pending' || b.status === 'Pending')}
               keyExtractor={item => item.id}
-              renderItem={({ item }) => (
-                <View style={styles.bookingCard}>
-                  <Text style={styles.bookingInfo}>{item.student} - {item.hostel} ({item.room})</Text>
-                  <View style={styles.bookingActions}>
-                    <TouchableOpacity onPress={() => approveBooking(item.id)} accessible={true} accessibilityLabel={`Approve booking for ${item.student} in ${item.hostel} (${item.room})`} activeOpacity={0.7}><Text style={styles.approveBtn}>Approve</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={() => rejectBooking(item.id)} accessible={true} accessibilityLabel={`Reject booking for ${item.student} in ${item.hostel} (${item.room})`} activeOpacity={0.7}><Text style={styles.rejectBtn}>Reject</Text></TouchableOpacity>
+              renderItem={({ item }) => {
+                const userName = item.name || item.student || 'User';
+                const hostelName = hostels.find(h => h.id === item.hostelId)?.name || item.hostel || 'Hostel';
+                const roomName = rooms.find(r => r.id === item.roomId)?.number || item.room || 'Room';
+                const status = (item.status || '').toLowerCase();
+                return (
+                  <View style={styles.bookingCard}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                      <Text style={styles.bookingInfo}>{userName} - {hostelName} ({roomName})</Text>
+                      <View style={{
+                        marginLeft: 10,
+                        backgroundColor: status === 'approved' ? '#4CAF50' : status === 'pending' ? '#FFC107' : '#F44336',
+                        borderRadius: 6,
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        alignSelf: 'flex-start',
+                      }}>
+                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.roomInfo}>Date: {item.date}</Text>
+                    <View style={styles.bookingActions}>
+                      <TouchableOpacity onPress={() => approveBooking(item.id)} accessible={true} accessibilityLabel={`Approve booking for ${userName} in ${hostelName} (${roomName})`} activeOpacity={0.7}><Text style={styles.approveBtn}>Approve</Text></TouchableOpacity>
+                      <TouchableOpacity onPress={() => rejectBooking(item.id)} accessible={true} accessibilityLabel={`Reject booking for ${userName} in ${hostelName} (${roomName})`} activeOpacity={0.7}><Text style={styles.rejectBtn}>Reject</Text></TouchableOpacity>
+                    </View>
                   </View>
-                </View>
-              )}
+                );
+              }}
               ListEmptyComponent={<Text style={styles.placeholder}>No pending bookings.</Text>}
               contentContainerStyle={{ paddingBottom: 24 }}
             />
           )}
           {activeTab === 4 && (
             <FlatList
-              data={mockPayments}
+              data={payments}
               keyExtractor={item => item.id}
-              renderItem={({ item }) => (
-                <View style={styles.paymentCard}>
-                  <Text style={styles.paymentInfo}>{item.student} - ${item.amount} ({item.method})</Text>
-                  <Text style={styles.paymentDate}>{item.date}</Text>
-                </View>
-              )}
+              renderItem={({ item }) => {
+                const booking = bookings.find(b => b.id === item.bookingId);
+                const userName = booking?.name || booking?.student || 'User';
+                const hostelName = hostels.find(h => h.id === booking?.hostelId)?.name || booking?.hostel || 'Hostel';
+                const status = (item.status || '').toLowerCase();
+                return (
+                  <View style={styles.paymentCard}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                      <Text style={styles.paymentInfo}>{userName} - {hostelName}</Text>
+                      <View style={{
+                        marginLeft: 10,
+                        backgroundColor: status === 'paid' ? '#4CAF50' : '#FFC107',
+                        borderRadius: 6,
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        alignSelf: 'flex-start',
+                      }}>
+                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.roomInfo}>Amount: ${item.amount} | Method: {item.method}</Text>
+                    <Text style={styles.paymentDate}>Date: {item.date}</Text>
+                  </View>
+                );
+              }}
               ListEmptyComponent={<Text style={styles.placeholder}>No payment records.</Text>}
               contentContainerStyle={{ paddingBottom: 24 }}
             />

@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingVi
 import colors from '../theme';
 import { useFonts } from 'expo-font';
 import { Inter_700Bold, Inter_500Medium, Inter_400Regular } from '@expo-google-fonts/inter';
-import { UserContext } from '../context/UserContext';
+import { UserContext } from '../../App';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -16,8 +16,8 @@ export default function LoginScreen({ navigation }) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    // Mock authentication: set user with isAdmin if email is admin@hostel.com
-    const isAdmin = email === 'admin@hostel.com';
+    // Mock authentication: set user with isAdmin if email is admin@hostel.com or admin@hostels.com
+    const isAdmin = email === 'admin@hostel.com' || email === 'admin@hostels.com';
     setUser({ name: isAdmin ? 'Admin' : 'Gilbert', email, isAdmin });
     navigation.replace('MainTabs');
   };

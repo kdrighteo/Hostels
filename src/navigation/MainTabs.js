@@ -5,7 +5,7 @@ import HomeScreen from '../screens/HomeScreen';
 import MyBookingsScreen from '../screens/MyBookingsScreen';
 import AdminDashboardScreen from '../screens/AdminDashboardScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';
-import { UserContext } from '../context/UserContext';
+import { UserContext } from '../../App';
 
 const Tab = createBottomTabNavigator();
 
