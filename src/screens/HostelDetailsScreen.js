@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, SafeAreaView } from 'react-native';
 import colors from '../theme';
 
 export default function HostelDetailsScreen({ route, navigation }) {
@@ -13,36 +13,49 @@ export default function HostelDetailsScreen({ route, navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {hostel.image && (
-        <Image source={{ uri: hostel.image }} style={styles.image} />
-      )}
-      <Text style={styles.name}>{hostel.name}</Text>
-      <Text style={styles.desc}>{hostel.description}</Text>
-      <View style={styles.infoRow}>
-        <Text style={styles.infoLabel}>Gender type:</Text>
-        <Text style={styles.infoValue}>{hostel.gender}</Text>
-      </View>
-      <View style={styles.infoRow}>
-        <Text style={styles.infoLabel}>Total rooms:</Text>
-        <Text style={styles.infoValue}>{hostel.totalRooms || 50}</Text>
-      </View>
-      <View style={styles.infoRow}>
-        <Text style={styles.infoLabel}>Amenities:</Text>
-        <Text style={styles.infoValue}>{hostel.amenities || 'WiFi, Laundry, Security'}</Text>
-      </View>
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('RoomList', { hostel })}>
-        <Text style={styles.buttonText}>View Available Rooms</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container}>
+        {hostel.image && (
+          <Image source={{ uri: hostel.image }} style={styles.image} />
+        )}
+        <Text style={styles.name}>{hostel.name}</Text>
+        <Text style={styles.desc}>{hostel.description}</Text>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Gender type:</Text>
+          <Text style={styles.infoValue}>{hostel.gender}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Total rooms:</Text>
+          <Text style={styles.infoValue}>{hostel.totalRooms || 50}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Amenities:</Text>
+          <Text style={styles.infoValue}>{hostel.amenities || 'WiFi, Laundry, Security'}</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('RoomList', { hostel })}
+          accessible={true}
+          accessibilityLabel={`View available rooms for ${hostel.name}`}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.buttonText}>View Available Rooms</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
     padding: 20,
+    paddingTop: 32,
   },
   image: {
     width: '100%',

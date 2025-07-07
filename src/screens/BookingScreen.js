@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import colors from '../theme';
 
 export default function BookingScreen({ route, navigation }) {
@@ -7,26 +7,38 @@ export default function BookingScreen({ route, navigation }) {
   const hostel = route.params?.hostel || { name: 'Jubilee Hostel' };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Booking - {hostel.name}</Text>
-      <View style={styles.roomCard}>
-        <Text style={styles.roomName}>{room.name}</Text>
-        <Text style={styles.roomType}>{room.type}</Text>
-        <Text style={styles.price}>${room.price}/{room.term}</Text>
-        <Text style={styles.occupancy}>{room.occupied} of {room.capacity} Occupied</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Booking - {hostel.name}</Text>
+        <View style={styles.roomCard}>
+          <Text style={styles.roomName}>{room.name}</Text>
+          <Text style={styles.roomType}>{room.type}</Text>
+          <Text style={styles.price}>${room.price}/{room.term}</Text>
+          <Text style={styles.occupancy}>{room.occupied} of {room.capacity} Occupied</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('Payment', { room, hostel })}
+          accessible={true}
+          accessibilityLabel={`Confirm booking for ${room.name}`}
+        >
+          <Text style={styles.buttonText}>Confirm Booking</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Payment', { room, hostel })}>
-        <Text style={styles.buttonText}>Confirm Booking</Text>
-      </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
     padding: 20,
+    paddingTop: 32,
   },
   title: {
     fontSize: 20,

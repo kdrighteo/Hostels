@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, ActivityIndicator, SafeAreaView } from 'react-native';
 import colors from '../theme';
 
 export default function SplashScreen({ navigation }) {
@@ -11,27 +11,34 @@ export default function SplashScreen({ navigation }) {
   }, [navigation]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoBox}>
-        <Image
-          source={require('../../assets/icon.png')}
-          style={styles.logo}
-        />
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.logoBox}>
+          <Image
+            source={require('../../assets/icon.png')}
+            style={styles.logo}
+          />
+        </View>
+        <Text style={styles.title}>Welcome to Hostels</Text>
+        <Text style={styles.subtitle}>Find and book your perfect hostel with ease.</Text>
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 32 }} />
       </View>
-      <Text style={styles.title}>Welcome to Hostels</Text>
-      <Text style={styles.subtitle}>Find and book your perfect hostel with ease.</Text>
-      <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 32 }} />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    paddingTop: 32,
   },
   logoBox: {
     backgroundColor: colors.surface,

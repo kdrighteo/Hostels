@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, createContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -14,9 +14,12 @@ import PaymentScreen from './src/screens/PaymentScreen';
 import MyBookingsScreen from './src/screens/MyBookingsScreen';
 import AdminDashboardScreen from './src/screens/AdminDashboardScreen';
 import SplashScreen from './src/screens/SplashScreen';
+import MainTabs from './src/navigation/MainTabs';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
+
+export const UserContext = createContext();
 
 function MainTabs() {
   return (
@@ -59,6 +62,8 @@ export default function App() {
     Inter_700Bold,
   });
 
+  const [user, setUser] = useState(null); // null = not logged in
+
   if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -68,16 +73,18 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Splash">
-        <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-        <Stack.Screen name="HostelDetails" component={HostelDetailsScreen} />
-        <Stack.Screen name="RoomList" component={RoomListScreen} />
-        <Stack.Screen name="Booking" component={BookingScreen} />
-        <Stack.Screen name="Payment" component={PaymentScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <UserContext.Provider value={{ user, setUser }}>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Splash">
+          <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+          <Stack.Screen name="HostelDetails" component={HostelDetailsScreen} />
+          <Stack.Screen name="RoomList" component={RoomListScreen} />
+          <Stack.Screen name="Booking" component={BookingScreen} />
+          <Stack.Screen name="Payment" component={PaymentScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </UserContext.Provider>
   );
 }

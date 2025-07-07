@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Animated, SafeAreaView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import colors from '../theme';
 
@@ -47,6 +47,9 @@ export default function RoomListScreen({ route, navigation }) {
           style={[styles.roomBox, isAvailable ? styles.available : styles.taken, isSelected && styles.selected]}
           disabled={!isAvailable}
           onPress={() => isAvailable && handleSelectRoom(item)}
+          accessible={true}
+          accessibilityLabel={isAvailable ? `Book ${item.name}` : `${item.name} is taken`}
+          activeOpacity={0.8}
         >
           <MaterialIcons
             name={isAvailable ? 'event-available' : 'event-busy'}
@@ -62,40 +65,47 @@ export default function RoomListScreen({ route, navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Room Map{hostel ? ` - ${hostel.name}` : ''}</Text>
-      <View style={styles.legendRow}>
-        <View style={styles.legendItem}>
-          <MaterialIcons name="event-available" size={20} color={colors.success} />
-          <Text style={styles.legendText}>Available</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Room Map{hostel ? ` - ${hostel.name}` : ''}</Text>
+        <View style={styles.legendRow}>
+          <View style={styles.legendItem}>
+            <MaterialIcons name="event-available" size={20} color={colors.success} />
+            <Text style={styles.legendText}>Available</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <MaterialIcons name="event-busy" size={20} color={colors.error} />
+            <Text style={styles.legendText}>Taken</Text>
+          </View>
         </View>
-        <View style={styles.legendItem}>
-          <MaterialIcons name="event-busy" size={20} color={colors.error} />
-          <Text style={styles.legendText}>Taken</Text>
-        </View>
+        {Object.keys(groupedRooms).sort((a, b) => a - b).map(floor => (
+          <View key={floor} style={styles.floorSection}>
+            <Text style={styles.floorTitle}>Floor {floor}</Text>
+            <FlatList
+              data={groupedRooms[floor]}
+              keyExtractor={item => item.id}
+              renderItem={({ item }) => renderRoom(item)}
+              numColumns={2}
+              columnWrapperStyle={{ justifyContent: 'space-between' }}
+              contentContainerStyle={{ paddingBottom: 8, paddingTop: 4 }}
+            />
+          </View>
+        ))}
       </View>
-      {Object.keys(groupedRooms).sort((a, b) => a - b).map(floor => (
-        <View key={floor} style={styles.floorSection}>
-          <Text style={styles.floorTitle}>Floor {floor}</Text>
-          <FlatList
-            data={groupedRooms[floor]}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => renderRoom(item)}
-            numColumns={2}
-            columnWrapperStyle={{ justifyContent: 'space-between' }}
-            contentContainerStyle={{ paddingBottom: 8, paddingTop: 4 }}
-          />
-        </View>
-      ))}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingTop: 32,
   },
   title: {
     fontSize: 20,

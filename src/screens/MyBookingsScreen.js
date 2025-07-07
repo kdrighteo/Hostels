@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
 import colors from '../theme';
 import { Inter_700Bold, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 
@@ -11,37 +11,69 @@ const mockBookings = [
 
 export default function MyBookingsScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>My Bookings</Text>
-      <FlatList
-        data={mockBookings}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.bookingCard}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={styles.roomName}>{item.room}</Text>
-              <Text style={styles.roomType}>{item.type}</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>My Bookings</Text>
+        <FlatList
+          data={mockBookings}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.bookingCard}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>{item.room.charAt(0)}</Text>
+                </View>
+                <Text style={styles.roomName}>{item.room}</Text>
+                <Text style={styles.roomType}>{item.type}</Text>
+              </View>
+              <View style={styles.statusRow}>
+                <Text style={styles.status}>{item.status}</Text>
+                <Text style={[styles.paid, { color: item.paid ? 'green' : 'red' }]}>{item.paid ? 'Paid' : 'Unpaid'}</Text>
+              </View>
+              <View style={styles.manageRow}>
+                <TouchableOpacity
+                  style={styles.manageBtn}
+                  accessible={true}
+                  accessibilityLabel={`Manage booking for ${item.room}`}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.manageText}>Manage Room</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.statusRow}>
-              <Text style={styles.status}>{item.status}</Text>
-              <Text style={[styles.paid, { color: item.paid ? 'green' : 'red' }]}>{item.paid ? 'Paid' : 'Unpaid'}</Text>
-            </View>
-            <View style={styles.manageRow}>
-              <TouchableOpacity style={styles.manageBtn}><Text style={styles.manageText}>Manage Room</Text></TouchableOpacity>
-            </View>
-          </View>
-        )}
-        contentContainerStyle={{ paddingBottom: 24 }}
-      />
-    </View>
+          )}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingTop: 32,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  avatarText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
   },
   title: {
     fontSize: 20,

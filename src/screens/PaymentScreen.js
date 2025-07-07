@@ -62,6 +62,8 @@ export default function PaymentScreen({ route, navigation }) {
         style={[styles.button, processing && styles.buttonDisabled]}
         onPress={handlePay}
         disabled={processing || !paymentMethod}
+        accessible={true}
+        accessibilityLabel={`Pay now with ${paymentMethod}`}
       >
         {processing ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Pay Now</Text>}
       </TouchableOpacity>
@@ -77,7 +79,7 @@ export default function PaymentScreen({ route, navigation }) {
             <MaterialIcons name="check-circle" size={48} color={colors.success} />
             <Text style={styles.modalTitle}>Payment Successful!</Text>
             <Text style={styles.modalMsg}>Your booking has been confirmed.</Text>
-            <TouchableOpacity style={styles.button} onPress={handleModalClose}>
+            <TouchableOpacity style={styles.button} onPress={handleModalClose} accessible={true} accessibilityLabel="Go to Bookings">
               <Text style={styles.buttonText}>Go to Bookings</Text>
             </TouchableOpacity>
           </View>

@@ -24,6 +24,8 @@ export default function HomeScreen({ navigation }) {
         placeholder="Search hostel"
         value={search}
         onChangeText={setSearch}
+        accessible={true}
+        accessibilityLabel="Search hostel input"
       />
       <FlatList
         data={filteredHostels}
@@ -32,6 +34,9 @@ export default function HomeScreen({ navigation }) {
           <TouchableOpacity
             style={styles.hostelCard}
             onPress={() => navigation.navigate('HostelDetails', { hostel: item })}
+            accessible={true}
+            accessibilityLabel={`View details for ${item.name}`}
+            activeOpacity={0.8}
           >
             <Image source={{ uri: item.image }} style={styles.hostelImage} />
             <View style={styles.hostelDetails}>

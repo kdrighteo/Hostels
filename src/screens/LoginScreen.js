@@ -1,20 +1,24 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import React, { useState, useContext } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, SafeAreaView } from 'react-native';
 import colors from '../theme';
 import { useFonts } from 'expo-font';
 import { Inter_700Bold, Inter_500Medium, Inter_400Regular } from '@expo-google-fonts/inter';
+import { UserContext } from '../context/UserContext';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
+  const { setUser } = useContext(UserContext);
 
   const handleAuth = () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    // Mock authentication
+    // Mock authentication: set user with isAdmin if email is admin@hostel.com
+    const isAdmin = email === 'admin@hostel.com';
+    setUser({ name: isAdmin ? 'Admin' : 'Gilbert', email, isAdmin });
     navigation.replace('MainTabs');
   };
 
@@ -29,46 +33,68 @@ export default function LoginScreen({ navigation }) {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.form}>
-        <Text style={styles.title}>{isRegister ? 'Register' : 'Login'}</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Email / School ID"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        <TouchableOpacity style={styles.button} onPress={handleAuth}>
-          <Text style={styles.buttonText}>{isRegister ? 'Register' : 'Login'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setIsRegister(!isRegister)}>
-          <Text style={styles.switchText}>
-            {isRegister ? 'Already have an account? Login' : "Don't have an account? Register"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.form}>
+          <Text style={styles.title}>{isRegister ? 'Register' : 'Login'}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Email / School ID"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            accessible={true}
+            accessibilityLabel="Email or School ID input"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            accessible={true}
+            accessibilityLabel="Password input"
+          />
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleAuth}
+            accessible={true}
+            accessibilityLabel={isRegister ? 'Register' : 'Login'}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.buttonText}>{isRegister ? 'Register' : 'Login'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setIsRegister(!isRegister)}
+            accessible={true}
+            accessibilityLabel={isRegister ? 'Switch to Login' : 'Switch to Register'}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.switchText}>
+              {isRegister ? 'Already have an account? Login' : "Don't have an account? Register"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
+    paddingTop: 32,
   },
   form: {
     width: '85%',
