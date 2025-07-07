@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import colors from '../theme';
+import { useFonts } from 'expo-font';
+import { Inter_700Bold, Inter_500Medium, Inter_400Regular } from '@expo-google-fonts/inter';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -14,6 +17,16 @@ export default function LoginScreen({ navigation }) {
     // Mock authentication
     navigation.replace('MainTabs');
   };
+
+  const [fontsLoaded] = useFonts({
+    Inter_700Bold,
+    Inter_500Medium,
+    Inter_400Regular,
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
     <KeyboardAvoidingView
@@ -55,11 +68,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
   form: {
     width: '85%',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 24,
     shadowColor: '#000',
@@ -72,31 +85,41 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 24,
     textAlign: 'center',
+    color: colors.primary,
+    fontFamily: 'Inter_700Bold',
   },
   input: {
     height: 48,
-    borderColor: '#ddd',
+    borderColor: colors.border,
     borderWidth: 1,
     borderRadius: 8,
     marginBottom: 16,
     paddingHorizontal: 12,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textPrimary,
   },
   button: {
-    backgroundColor: '#222',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 12,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 2,
   },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+    fontFamily: 'Inter_500Medium',
   },
   switchText: {
-    color: '#007bff',
+    color: colors.accent,
     textAlign: 'center',
     marginTop: 8,
+    fontFamily: 'Inter_400Regular',
   },
 }); 

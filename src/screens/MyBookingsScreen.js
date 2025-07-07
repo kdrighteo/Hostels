@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import colors from '../theme';
+import { Inter_700Bold, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 
 const mockBookings = [
   { id: '1', room: 'Room A1', type: 'Double', status: 'Pending', paid: true },
@@ -38,16 +40,18 @@ export default function MyBookingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     padding: 20,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
+    color: colors.primary,
+    fontFamily: 'Inter_700Bold',
   },
   bookingCard: {
-    backgroundColor: '#f4f4f4',
+    backgroundColor: colors.surface,
     borderRadius: 10,
     padding: 16,
     marginBottom: 14,
@@ -59,10 +63,13 @@ const styles = StyleSheet.create({
   roomName: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontFamily: 'Inter_700Bold',
   },
   roomType: {
     fontSize: 14,
-    color: '#555',
+    color: colors.textSecondary,
+    fontFamily: 'Inter_400Regular',
   },
   statusRow: {
     flexDirection: 'row',
@@ -71,12 +78,14 @@ const styles = StyleSheet.create({
   },
   status: {
     fontSize: 14,
-    color: '#222',
+    color: colors.primary,
     fontWeight: 'bold',
+    fontFamily: 'Inter_500Medium',
   },
   paid: {
     fontSize: 14,
     fontWeight: 'bold',
+    fontFamily: 'Inter_500Medium',
   },
   manageRow: {
     flexDirection: 'row',
@@ -86,12 +95,17 @@ const styles = StyleSheet.create({
   manageBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#222',
+    backgroundColor: colors.primary,
     borderRadius: 6,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 2,
   },
   manageText: {
     color: '#fff',
     fontSize: 13,
     fontWeight: 'bold',
+    fontFamily: 'Inter_500Medium',
   },
 }); 

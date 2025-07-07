@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import colors from '../theme';
 
 export default function HostelDetailsScreen({ route, navigation }) {
   const hostel = route.params?.hostel || {
@@ -40,7 +41,7 @@ export default function HostelDetailsScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     padding: 20,
   },
   image: {
@@ -54,11 +55,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: colors.primary,
+    fontFamily: 'Inter_700Bold',
   },
   desc: {
     fontSize: 15,
-    color: '#555',
+    color: colors.textSecondary,
     marginBottom: 16,
+    fontFamily: 'Inter_400Regular',
   },
   infoRow: {
     flexDirection: 'row',
@@ -67,21 +71,28 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontWeight: 'bold',
     width: 110,
-    color: '#333',
+    color: colors.textPrimary,
+    fontFamily: 'Inter_500Medium',
   },
   infoValue: {
-    color: '#444',
+    color: colors.textSecondary,
+    fontFamily: 'Inter_400Regular',
   },
   button: {
     marginTop: 28,
-    backgroundColor: '#222',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 2,
   },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+    fontFamily: 'Inter_500Medium',
   },
 }); 

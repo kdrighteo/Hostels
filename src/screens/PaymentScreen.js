@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Modal, ActivityIndicator } from 'react-native';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
+import colors from '../theme';
 
 export default function PaymentScreen({ route, navigation }) {
   const [paymentMethod, setPaymentMethod] = useState('Mobile Money');
@@ -27,7 +28,7 @@ export default function PaymentScreen({ route, navigation }) {
     <View style={styles.container}>
       {/* Secure Payment Label */}
       <View style={styles.secureRow}>
-        <MaterialIcons name="lock" size={20} color="#2ecc40" />
+        <MaterialIcons name="lock" size={20} color={colors.success} />
         <Text style={styles.secureText}>Secure Payment</Text>
       </View>
       {/* Summary Card */}
@@ -45,14 +46,14 @@ export default function PaymentScreen({ route, navigation }) {
           style={[styles.methodBtn, paymentMethod === 'Mobile Money' && styles.methodBtnActive]}
           onPress={() => setPaymentMethod('Mobile Money')}
         >
-          <FontAwesome name="mobile" size={22} color={paymentMethod === 'Mobile Money' ? '#fff' : '#222'} />
+          <FontAwesome name="mobile" size={22} color={paymentMethod === 'Mobile Money' ? '#fff' : colors.textPrimary} />
           <Text style={[styles.methodText, paymentMethod === 'Mobile Money' && styles.methodTextActive]}>Mobile Money</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.methodBtn, paymentMethod === 'Credit Card' && styles.methodBtnActive]}
           onPress={() => setPaymentMethod('Credit Card')}
         >
-          <FontAwesome name="credit-card" size={22} color={paymentMethod === 'Credit Card' ? '#fff' : '#222'} />
+          <FontAwesome name="credit-card" size={22} color={paymentMethod === 'Credit Card' ? '#fff' : colors.textPrimary} />
           <Text style={[styles.methodText, paymentMethod === 'Credit Card' && styles.methodTextActive]}>Credit Card</Text>
         </TouchableOpacity>
       </View>
@@ -66,14 +67,14 @@ export default function PaymentScreen({ route, navigation }) {
       </TouchableOpacity>
       {/* Powered by badge */}
       <View style={styles.poweredByRow}>
-        <FontAwesome name="cc-stripe" size={18} color="#222" />
+        <FontAwesome name="cc-stripe" size={18} color={colors.textPrimary} />
         <Text style={styles.poweredByText}>Powered by Stripe (Demo)</Text>
       </View>
       {/* Confirmation Modal */}
       <Modal visible={showModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <MaterialIcons name="check-circle" size={48} color="#2ecc40" />
+            <MaterialIcons name="check-circle" size={48} color={colors.success} />
             <Text style={styles.modalTitle}>Payment Successful!</Text>
             <Text style={styles.modalMsg}>Your booking has been confirmed.</Text>
             <TouchableOpacity style={styles.button} onPress={handleModalClose}>
@@ -89,7 +90,7 @@ export default function PaymentScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     padding: 20,
   },
   secureRow: {
@@ -98,13 +99,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   secureText: {
-    color: '#2ecc40',
+    color: colors.success,
     fontWeight: 'bold',
     marginLeft: 6,
     fontSize: 15,
+    fontFamily: 'Inter_500Medium',
   },
   summaryCard: {
-    backgroundColor: '#f4f4f4',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 18,
     marginBottom: 18,
@@ -117,21 +119,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: colors.primary,
+    fontFamily: 'Inter_700Bold',
   },
   summaryText: {
     fontSize: 14,
-    color: '#444',
+    color: colors.textSecondary,
     marginBottom: 2,
+    fontFamily: 'Inter_400Regular',
   },
   bold: {
     fontWeight: 'bold',
-    color: '#222',
+    color: colors.textPrimary,
+    fontFamily: 'Inter_500Medium',
   },
   label: {
     fontSize: 15,
     fontWeight: 'bold',
     marginTop: 8,
     marginBottom: 4,
+    color: colors.primary,
+    fontFamily: 'Inter_500Medium',
   },
   methodRow: {
     flexDirection: 'row',
@@ -142,33 +150,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.border,
     borderRadius: 8,
     padding: 14,
     marginRight: 10,
-    backgroundColor: '#f4f4f4',
+    backgroundColor: colors.surface,
     justifyContent: 'center',
   },
   methodBtnActive: {
-    backgroundColor: '#222',
-    borderColor: '#222',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   methodText: {
     fontSize: 15,
-    color: '#222',
+    color: colors.textPrimary,
     marginLeft: 8,
     fontWeight: 'bold',
+    fontFamily: 'Inter_500Medium',
   },
   methodTextActive: {
     color: '#fff',
   },
   button: {
-    backgroundColor: '#222',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 12,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 2,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -177,6 +190,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+    fontFamily: 'Inter_500Medium',
   },
   poweredByRow: {
     flexDirection: 'row',
@@ -186,8 +200,9 @@ const styles = StyleSheet.create({
   },
   poweredByText: {
     marginLeft: 6,
-    color: '#888',
+    color: colors.textSecondary,
     fontSize: 13,
+    fontFamily: 'Inter_400Regular',
   },
   modalOverlay: {
     flex: 1,
@@ -196,7 +211,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 32,
     alignItems: 'center',
@@ -211,12 +226,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 12,
     marginBottom: 6,
-    color: '#2ecc40',
+    color: colors.success,
+    fontFamily: 'Inter_700Bold',
   },
   modalMsg: {
     fontSize: 15,
-    color: '#444',
+    color: colors.textSecondary,
     marginBottom: 18,
     textAlign: 'center',
+    fontFamily: 'Inter_400Regular',
   },
 }); 

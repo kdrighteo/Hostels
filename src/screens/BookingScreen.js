@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import colors from '../theme';
 
 export default function BookingScreen({ route, navigation }) {
   const room = route.params?.room || { name: 'Room A1', type: 'Double', price: 300, term: 'term', occupied: 2, capacity: 2 };
@@ -24,16 +25,18 @@ export default function BookingScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     padding: 20,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
+    color: colors.primary,
+    fontFamily: 'Inter_700Bold',
   },
   roomCard: {
-    backgroundColor: '#f4f4f4',
+    backgroundColor: colors.surface,
     borderRadius: 10,
     padding: 16,
     marginBottom: 24,
@@ -45,32 +48,42 @@ const styles = StyleSheet.create({
   roomName: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontFamily: 'Inter_700Bold',
   },
   roomType: {
     fontSize: 14,
-    color: '#555',
+    color: colors.textSecondary,
     marginBottom: 4,
+    fontFamily: 'Inter_400Regular',
   },
   price: {
     fontSize: 15,
-    color: '#222',
+    color: colors.primary,
     marginBottom: 4,
+    fontFamily: 'Inter_500Medium',
   },
   occupancy: {
     fontSize: 13,
-    color: '#888',
+    color: colors.textSecondary,
     marginBottom: 4,
+    fontFamily: 'Inter_400Regular',
   },
   button: {
-    backgroundColor: '#222',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 12,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 2,
   },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+    fontFamily: 'Inter_500Medium',
   },
 }); 

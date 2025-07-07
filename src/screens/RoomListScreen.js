@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import colors from '../theme';
 
 const mockRooms = [
   { id: 'A1', name: 'Room A1', type: 'Double', price: 300, term: 'term', occupied: 2, capacity: 2, floor: 1 },
@@ -50,7 +51,7 @@ export default function RoomListScreen({ route, navigation }) {
           <MaterialIcons
             name={isAvailable ? 'event-available' : 'event-busy'}
             size={28}
-            color={isAvailable ? '#2ecc40' : '#ff4136'}
+            color={isAvailable ? colors.success : colors.error}
           />
           <Text style={styles.roomName}>{item.name}</Text>
           <Text style={styles.roomType}>{item.type}</Text>
@@ -65,11 +66,11 @@ export default function RoomListScreen({ route, navigation }) {
       <Text style={styles.title}>Room Map{hostel ? ` - ${hostel.name}` : ''}</Text>
       <View style={styles.legendRow}>
         <View style={styles.legendItem}>
-          <MaterialIcons name="event-available" size={20} color="#2ecc40" />
+          <MaterialIcons name="event-available" size={20} color={colors.success} />
           <Text style={styles.legendText}>Available</Text>
         </View>
         <View style={styles.legendItem}>
-          <MaterialIcons name="event-busy" size={20} color="#ff4136" />
+          <MaterialIcons name="event-busy" size={20} color={colors.error} />
           <Text style={styles.legendText}>Taken</Text>
         </View>
       </View>
@@ -93,13 +94,15 @@ export default function RoomListScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     padding: 20,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: colors.primary,
+    fontFamily: 'Inter_700Bold',
   },
   legendRow: {
     flexDirection: 'row',
@@ -114,7 +117,8 @@ const styles = StyleSheet.create({
   legendText: {
     marginLeft: 4,
     fontSize: 14,
-    color: '#555',
+    color: colors.textSecondary,
+    fontFamily: 'Inter_400Regular',
   },
   floorSection: {
     marginBottom: 18,
@@ -123,11 +127,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 6,
-    color: '#007bff',
+    color: colors.secondary,
+    fontFamily: 'Inter_700Bold',
   },
   roomBox: {
     flex: 1,
-    backgroundColor: '#f4f4f4',
+    backgroundColor: colors.surface,
     borderRadius: 10,
     padding: 16,
     marginBottom: 16,
@@ -140,30 +145,34 @@ const styles = StyleSheet.create({
   },
   available: {
     borderWidth: 2,
-    borderColor: '#2ecc40',
+    borderColor: colors.success,
   },
   taken: {
     borderWidth: 2,
-    borderColor: '#ff4136',
+    borderColor: colors.error,
     opacity: 0.6,
   },
   selected: {
-    borderColor: '#007bff',
+    borderColor: colors.primary,
     borderWidth: 3,
   },
   roomName: {
     fontSize: 16,
     fontWeight: 'bold',
     marginTop: 6,
+    color: colors.textPrimary,
+    fontFamily: 'Inter_700Bold',
   },
   roomType: {
     fontSize: 13,
-    color: '#555',
+    color: colors.textSecondary,
     marginBottom: 2,
+    fontFamily: 'Inter_400Regular',
   },
   occupancy: {
     fontSize: 13,
-    color: '#888',
+    color: colors.textSecondary,
     marginTop: 2,
+    fontFamily: 'Inter_400Regular',
   },
 }); 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import colors from '../theme';
 
 const mockHostels = [
   { id: '1', name: 'Jubilee Hostel', gender: 'Male', roomsLeft: 12, description: 'Modern hostel for male students.', image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80' },
@@ -49,7 +50,7 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     paddingHorizontal: 16,
     paddingTop: 24,
   },
@@ -57,18 +58,22 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
+    color: colors.primary,
+    fontFamily: 'Inter_700Bold',
   },
   search: {
     height: 44,
-    borderColor: '#ddd',
+    borderColor: colors.border,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
     marginBottom: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: colors.surface,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textPrimary,
   },
   hostelCard: {
-    backgroundColor: '#f4f4f4',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     marginBottom: 18,
     shadowColor: '#000',
@@ -89,14 +94,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: colors.textPrimary,
+    fontFamily: 'Inter_700Bold',
   },
   hostelInfo: {
     fontSize: 14,
-    color: '#555',
+    color: colors.textSecondary,
     marginBottom: 4,
+    fontFamily: 'Inter_400Regular',
   },
   hostelDesc: {
     fontSize: 13,
-    color: '#888',
+    color: colors.textSecondary,
+    fontFamily: 'Inter_400Regular',
   },
 }); 
