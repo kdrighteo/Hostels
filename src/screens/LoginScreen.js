@@ -18,7 +18,7 @@ export default function LoginScreen({ navigation }) {
     }
     // Mock authentication: set user with isAdmin if email is admin@hostel.com or admin@hostels.com
     const isAdmin = email === 'admin@hostel.com' || email === 'admin@hostels.com';
-    setUser({ name: isAdmin ? 'Admin' : 'Gilbert', email, isAdmin });
+    setUser({ id: isAdmin ? 'admin' : 'u1', name: isAdmin ? 'Admin' : 'Gilbert', email, isAdmin });
     navigation.replace('MainTabs');
   };
 
