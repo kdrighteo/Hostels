@@ -4,6 +4,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
 import MyBookingsScreen from '../screens/MyBookingsScreen';
 import AdminDashboardScreen from '../screens/AdminDashboardScreen';
+import AgentDashboardScreen from '../screens/AgentDashboardScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';
 import { UserContext } from '../../App';
 
@@ -41,8 +42,10 @@ export default function MainTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Bookings" component={MyBookingsScreen} />
-      {user?.isAdmin ? (
+      {user?.role === 'admin' ? (
         <Tab.Screen name="Admin" component={AdminDashboardScreen} />
+      ) : user?.role === 'agent' ? (
+        <Tab.Screen name="Agent" component={AgentDashboardScreen} />
       ) : (
         <Tab.Screen name="Profile" component={UserProfileScreen} />
       )}

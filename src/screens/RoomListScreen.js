@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Animated, SafeAreaView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import colors from '../theme';
+import { db } from '../firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 const mockRooms = [
   { id: 'A1', name: 'Room A1', type: 'Double', price: 300, term: 'term', occupied: 2, capacity: 2, floor: 1 },
@@ -25,8 +27,26 @@ export default function RoomListScreen({ route, navigation }) {
   const hostel = route.params?.hostel;
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [animation] = useState(new Animated.Value(1));
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const groupedRooms = groupByFloor(mockRooms);
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    if (!hostel?.id) return;
+    const q = query(collection(db, 'rooms'), where('hostelId', '==', hostel.id));
+    const unsub = onSnapshot(q, (snapshot) => {
+      setRooms(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    }, (err) => {
+      setError('Failed to load rooms. Please check your connection or Firestore rules.');
+      setLoading(false);
+    });
+    return unsub;
+  }, [hostel?.id]);
+
+  const groupedRooms = groupByFloor(rooms);
 
   const handleSelectRoom = (room) => {
     setSelectedRoomId(room.id);
@@ -78,19 +98,25 @@ export default function RoomListScreen({ route, navigation }) {
             <Text style={styles.legendText}>Taken</Text>
           </View>
         </View>
-        {Object.keys(groupedRooms).sort((a, b) => a - b).map(floor => (
-          <View key={floor} style={styles.floorSection}>
-            <Text style={styles.floorTitle}>Floor {floor}</Text>
-            <FlatList
-              data={groupedRooms[floor]}
-              keyExtractor={item => item.id}
-              renderItem={({ item }) => renderRoom(item)}
-              numColumns={2}
-              columnWrapperStyle={{ justifyContent: 'space-between' }}
-              contentContainerStyle={{ paddingBottom: 8, paddingTop: 4 }}
-            />
-          </View>
-        ))}
+        {loading ? (
+          <Text style={{ textAlign: 'center', marginTop: 40 }}>Loading rooms...</Text>
+        ) : error ? (
+          <Text style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>{error}</Text>
+        ) : (
+          Object.keys(groupedRooms).sort((a, b) => a - b).map(floor => (
+            <View key={floor} style={styles.floorSection}>
+              <Text style={styles.floorTitle}>Floor {floor}</Text>
+              <FlatList
+                data={groupedRooms[floor]}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => renderRoom(item)}
+                numColumns={2}
+                columnWrapperStyle={{ justifyContent: 'space-between' }}
+                contentContainerStyle={{ paddingBottom: 8, paddingTop: 4 }}
+              />
+            </View>
+          ))
+        )}
       </View>
     </SafeAreaView>
   );

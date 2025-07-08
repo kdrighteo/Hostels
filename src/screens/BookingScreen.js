@@ -1,10 +1,46 @@
-import React from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import colors from '../theme';
+import * as Notifications from 'expo-notifications';
+import { UserContext } from '../../App';
+import { db } from '../firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 export default function BookingScreen({ route, navigation }) {
   const room = route.params?.room || { name: 'Room A1', type: 'Double', price: 300, term: 'term', occupied: 2, capacity: 2 };
   const hostel = route.params?.hostel || { name: 'Jubilee Hostel' };
+  const { user } = useContext(UserContext);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      await Notifications.requestPermissionsAsync();
+    })();
+  }, []);
+
+  const handleBooking = async () => {
+    setLoading(true);
+    // Send local notification
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Booking Confirmed',
+        body: `Your booking for ${room.name} at ${hostel.name} is confirmed!`,
+      },
+      trigger: null,
+    });
+    // Add booking to Firestore
+    await addDoc(collection(db, 'bookings'), {
+      userId: user?.id || '',
+      hostelId: hostel.id,
+      roomId: room.id,
+      status: 'Pending',
+      date: new Date().toISOString(),
+      name: user?.name || '',
+      email: user?.email || '',
+    });
+    setLoading(false);
+    navigation.navigate('Payment', { room, hostel });
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -18,11 +54,12 @@ export default function BookingScreen({ route, navigation }) {
         </View>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('Payment', { room, hostel })}
+          onPress={handleBooking}
           accessible={true}
           accessibilityLabel={`Confirm booking for ${room.name}`}
+          disabled={loading}
         >
-          <Text style={styles.buttonText}>Confirm Booking</Text>
+          <Text style={styles.buttonText}>{loading ? 'Booking...' : 'Confirm Booking'}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

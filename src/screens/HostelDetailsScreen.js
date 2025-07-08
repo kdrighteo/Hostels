@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, SafeAreaView, Linking } from 'react-native';
 import colors from '../theme';
+import MapView, { Marker } from 'react-native-maps';
 
 export default function HostelDetailsScreen({ route, navigation }) {
   const hostel = route.params?.hostel || {
@@ -11,6 +12,10 @@ export default function HostelDetailsScreen({ route, navigation }) {
     amenities: 'WiFi, Laundry, Security',
     image: null,
   };
+
+  // Mock coordinates for demonstration
+  const latitude = hostel.latitude || 5.6037;
+  const longitude = hostel.longitude || -0.1870;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -32,6 +37,28 @@ export default function HostelDetailsScreen({ route, navigation }) {
           <Text style={styles.infoLabel}>Amenities:</Text>
           <Text style={styles.infoValue}>{hostel.amenities || 'WiFi, Laundry, Security'}</Text>
         </View>
+        <View style={{ height: 180, borderRadius: 12, overflow: 'hidden', marginBottom: 18 }}>
+          <MapView
+            style={{ flex: 1 }}
+            initialRegion={{
+              latitude,
+              longitude,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            }}
+          >
+            <Marker coordinate={{ latitude, longitude }} title={hostel.name} />
+          </MapView>
+        </View>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.secondary, marginTop: 0 }]}
+          onPress={() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`)}
+          accessible={true}
+          accessibilityLabel={`Get directions to ${hostel.name}`}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.buttonText}>Get Directions</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.button}
           onPress={() => navigation.navigate('RoomList', { hostel })}

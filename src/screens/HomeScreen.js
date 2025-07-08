@@ -1,18 +1,31 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import colors from '../theme';
-
-const mockHostels = [
-  { id: '1', name: 'Jubilee Hostel', gender: 'Male', roomsLeft: 12, description: 'Modern hostel for male students.', image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80' },
-  { id: '2', name: 'Addes Hostel', gender: 'Female', roomsLeft: 8, description: 'Comfortable hostel for female students.', image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=400&q=80' },
-  { id: '3', name: 'Hoo Red Hetal', gender: 'Mixed', roomsLeft: 5, description: 'Mixed hostel with great amenities.', image: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=400&q=80' },
-];
+import { Ionicons } from '@expo/vector-icons';
+import { db } from '../firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 
 export default function HomeScreen({ navigation }) {
   const [search, setSearch] = useState('');
   const [user] = useState({ name: 'Gilbert' });
+  const [hostels, setHostels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const filteredHostels = mockHostels.filter(h =>
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    const unsub = onSnapshot(collection(db, 'hostels'), (snapshot) => {
+      setHostels(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    }, (err) => {
+      setError('Failed to load hostels. Please check your connection or Firestore rules.');
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  const filteredHostels = hostels.filter(h =>
     h.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -27,27 +40,57 @@ export default function HomeScreen({ navigation }) {
         accessible={true}
         accessibilityLabel="Search hostel input"
       />
-      <FlatList
-        data={filteredHostels}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.hostelCard}
-            onPress={() => navigation.navigate('HostelDetails', { hostel: item })}
-            accessible={true}
-            accessibilityLabel={`View details for ${item.name}`}
-            activeOpacity={0.8}
-          >
-            <Image source={{ uri: item.image }} style={styles.hostelImage} />
-            <View style={styles.hostelDetails}>
-              <Text style={styles.hostelName}>{item.name}</Text>
-              <Text style={styles.hostelInfo}>Gender: {item.gender} | {item.roomsLeft} Rooms Left</Text>
-              <Text style={styles.hostelDesc}>{item.description}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        contentContainerStyle={{ paddingBottom: 24 }}
-      />
+      {loading ? (
+        <Text style={{ textAlign: 'center', marginTop: 40 }}>Loading hostels...</Text>
+      ) : error ? (
+        <Text style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>{error}</Text>
+      ) : (
+        <FlatList
+          data={filteredHostels}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.hostelCard}
+              onPress={() => navigation.navigate('HostelDetails', { hostel: item })}
+              accessible={true}
+              accessibilityLabel={`View details for ${item.name}`}
+              activeOpacity={0.8}
+            >
+              <Image source={{ uri: item.image }} style={styles.hostelImage} />
+              <View style={styles.hostelDetails}>
+                <Text style={styles.hostelName}>{item.name}</Text>
+                <Text style={styles.hostelInfo}>Gender: {item.gender} | {item.roomsLeft} Rooms Left</Text>
+                <Text style={styles.hostelDesc}>{item.description}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        />
+      )}
+      {/* Floating Support Button */}
+      <TouchableOpacity
+        style={{
+          position: 'absolute',
+          bottom: 32,
+          right: 24,
+          backgroundColor: colors.primary,
+          borderRadius: 32,
+          width: 56,
+          height: 56,
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: colors.primary,
+          shadowOpacity: 0.18,
+          shadowRadius: 8,
+          elevation: 4,
+        }}
+        onPress={() => navigation.navigate('SupportChat')}
+        accessible={true}
+        accessibilityLabel="Open support chat"
+        activeOpacity={0.8}
+      >
+        <Ionicons name="chatbubble-ellipses" size={28} color="#fff" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }

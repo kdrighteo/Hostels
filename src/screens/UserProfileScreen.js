@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Modal, T
 import colors from '../theme';
 import { UserContext } from '../../App';
 import { mockUser, mockBookings, mockHostels, mockRooms } from '../data/mockData';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
 
 export default function UserProfileScreen({ navigation }) {
   const { user, setUser } = useContext(UserContext);
@@ -10,8 +12,11 @@ export default function UserProfileScreen({ navigation }) {
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
   const [feedback, setFeedback] = useState('');
+  const [editInstitution, setEditInstitution] = useState(user?.institution || '');
+  const [editContact, setEditContact] = useState(user?.contactNumber || '');
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut(auth);
     setUser(null);
     navigation.replace('Login');
   };
@@ -21,7 +26,7 @@ export default function UserProfileScreen({ navigation }) {
       setFeedback('Please fill all fields');
       return;
     }
-    setUser({ ...user, name: editName, email: editEmail });
+    setUser({ ...user, name: editName, email: editEmail, institution: editInstitution, contactNumber: editContact });
     setFeedback('Profile updated!');
     setTimeout(() => {
       setEditVisible(false);
@@ -48,9 +53,10 @@ export default function UserProfileScreen({ navigation }) {
         </View>
         <Text style={styles.name}>{user.name}</Text>
         <Text style={styles.email}>{user.email}</Text>
-        {user.schoolId && <Text style={styles.schoolId}>School ID: {user.schoolId}</Text>}
+        {user.institution && <Text style={styles.schoolId}>Institution: {user.institution}</Text>}
+        {user.contactNumber && <Text style={styles.schoolId}>Contact: {user.contactNumber}</Text>}
         <TouchableOpacity style={styles.editBtn} onPress={() => {
-          setEditName(user.name); setEditEmail(user.email); setEditVisible(true);
+          setEditName(user.name); setEditEmail(user.email); setEditInstitution(user.institution || ''); setEditContact(user.contactNumber || ''); setEditVisible(true);
         }} accessible={true} accessibilityLabel="Edit Profile" activeOpacity={0.7}>
           <Text style={styles.editBtnText}>Edit Profile</Text>
         </TouchableOpacity>
@@ -109,6 +115,22 @@ export default function UserProfileScreen({ navigation }) {
                 placeholder="Email"
                 keyboardType="email-address"
                 autoCapitalize="none"
+              />
+              <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Institution</Text>
+              <TextInput
+                style={styles.input}
+                value={editInstitution}
+                onChangeText={setEditInstitution}
+                placeholder="Institution"
+                autoCapitalize="words"
+              />
+              <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Contact Number</Text>
+              <TextInput
+                style={styles.input}
+                value={editContact}
+                onChangeText={setEditContact}
+                placeholder="Contact Number"
+                keyboardType="phone-pad"
               />
               {feedback ? <Text style={{ color: feedback === 'Profile updated!' ? colors.success : colors.error, marginBottom: 8 }}>{feedback}</Text> : null}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>

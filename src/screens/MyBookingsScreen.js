@@ -2,6 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
 import colors from '../theme';
 import { Inter_700Bold, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
+import { useEffect, useState, useContext } from 'react';
+import { db } from '../firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { UserContext } from '../../App';
 
 const mockBookings = [
   { id: '1', room: 'Room A1', type: 'Double', status: 'Pending', paid: true },
@@ -9,41 +13,67 @@ const mockBookings = [
   { id: '3', room: 'Room A11', type: 'Double', status: 'Pending', paid: false },
 ];
 
-export default function MyBookingsScreen() {
+export default function MyBookingsScreen({ bookings: propBookings }) {
+  const { user } = useContext(UserContext);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    if (!user?.id) return;
+    const q = query(collection(db, 'bookings'), where('userId', '==', user.id));
+    const unsub = onSnapshot(q, (snapshot) => {
+      setBookings(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    }, (err) => {
+      setError('Failed to load bookings. Please check your connection or Firestore rules.');
+      setLoading(false);
+    });
+    return unsub;
+  }, [user?.id]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <Text style={styles.title}>My Bookings</Text>
-        <FlatList
-          data={mockBookings}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.bookingCard}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{item.room.charAt(0)}</Text>
+        {loading ? (
+          <Text style={{ textAlign: 'center', marginTop: 40 }}>Loading bookings...</Text>
+        ) : error ? (
+          <Text style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>{error}</Text>
+        ) : (
+          <FlatList
+            data={bookings}
+            keyExtractor={item => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.bookingCard}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>{item.room.charAt(0)}</Text>
+                  </View>
+                  <Text style={styles.roomName}>{item.room}</Text>
+                  <Text style={styles.roomType}>{item.type}</Text>
                 </View>
-                <Text style={styles.roomName}>{item.room}</Text>
-                <Text style={styles.roomType}>{item.type}</Text>
+                <View style={styles.statusRow}>
+                  <Text style={styles.status}>{item.status}</Text>
+                  <Text style={[styles.paid, { color: item.paid ? 'green' : 'red' }]}>{item.paid ? 'Paid' : 'Unpaid'}</Text>
+                </View>
+                <View style={styles.manageRow}>
+                  <TouchableOpacity
+                    style={styles.manageBtn}
+                    accessible={true}
+                    accessibilityLabel={`Manage booking for ${item.room}`}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.manageText}>Manage Room</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.statusRow}>
-                <Text style={styles.status}>{item.status}</Text>
-                <Text style={[styles.paid, { color: item.paid ? 'green' : 'red' }]}>{item.paid ? 'Paid' : 'Unpaid'}</Text>
-              </View>
-              <View style={styles.manageRow}>
-                <TouchableOpacity
-                  style={styles.manageBtn}
-                  accessible={true}
-                  accessibilityLabel={`Manage booking for ${item.room}`}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.manageText}>Manage Room</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-          contentContainerStyle={{ paddingBottom: 24 }}
-        />
+            )}
+            contentContainerStyle={{ paddingBottom: 24 }}
+          />
+        )}
       </View>
     </SafeAreaView>
   );

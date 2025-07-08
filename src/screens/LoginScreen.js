@@ -4,22 +4,62 @@ import colors from '../theme';
 import { useFonts } from 'expo-font';
 import { Inter_700Bold, Inter_500Medium, Inter_400Regular } from '@expo-google-fonts/inter';
 import { UserContext } from '../../App';
+import { db, auth } from '../firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [institution, setInstitution] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
   const { setUser } = useContext(UserContext);
 
-  const handleAuth = () => {
+  const handleAuth = async () => {
+    if (isRegister) {
+      if (!fullName || !institution || !contactNumber || !email || !password) {
+        Alert.alert('Error', 'Please fill in all fields');
+        return;
+      }
+      try {
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        const userId = userCred.user.uid;
+        // Save profile to Firestore
+        await setDoc(doc(db, 'users', userId), {
+          name: fullName,
+          institution,
+          contactNumber,
+          email,
+          role: 'user',
+        });
+        setUser({ id: userId, name: fullName, institution, contactNumber, email, role: 'user' });
+        navigation.replace('MainTabs');
+      } catch (err) {
+        Alert.alert('Registration Error', err.message);
+      }
+      return;
+    }
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    // Mock authentication: set user with isAdmin if email is admin@hostel.com or admin@hostels.com
-    const isAdmin = email === 'admin@hostel.com' || email === 'admin@hostels.com';
-    setUser({ id: isAdmin ? 'admin' : 'u1', name: isAdmin ? 'Admin' : 'Gilbert', email, isAdmin });
-    navigation.replace('MainTabs');
+    try {
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      const userId = userCred.user.uid;
+      // Fetch profile from Firestore
+      const userSnap = await getDoc(doc(db, 'users', userId));
+      if (!userSnap.exists()) {
+        Alert.alert('Login Error', 'User profile not found.');
+        return;
+      }
+      const userData = userSnap.data();
+      setUser({ id: userId, ...userData });
+      navigation.replace('MainTabs');
+    } catch (err) {
+      Alert.alert('Login Error', err.message);
+    }
   };
 
   const [fontsLoaded] = useFonts({
@@ -40,6 +80,37 @@ export default function LoginScreen({ navigation }) {
       >
         <View style={styles.form}>
           <Text style={styles.title}>{isRegister ? 'Register' : 'Login'}</Text>
+          {isRegister && (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Full Name"
+                value={fullName}
+                onChangeText={setFullName}
+                autoCapitalize="words"
+                accessible={true}
+                accessibilityLabel="Full Name input"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Institution"
+                value={institution}
+                onChangeText={setInstitution}
+                autoCapitalize="words"
+                accessible={true}
+                accessibilityLabel="Institution input"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Contact Number"
+                value={contactNumber}
+                onChangeText={setContactNumber}
+                keyboardType="phone-pad"
+                accessible={true}
+                accessibilityLabel="Contact Number input"
+              />
+            </>
+          )}
           <TextInput
             style={styles.input}
             placeholder="Email / School ID"

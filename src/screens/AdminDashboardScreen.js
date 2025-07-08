@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert, SafeAreaView, Image } from 'react-native';
 import colors from '../theme';
+import { db } from '../firebase';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { mockHostels, mockRooms, mockBookings, mockPayments } from '../data/mockData';
 
 const TABS = [
@@ -9,14 +11,18 @@ const TABS = [
   { label: '🚪 Manage Rooms', key: 'rooms' },
   { label: '📆 Approve Bookings', key: 'bookings' },
   { label: '💳 Payment Records', key: 'payments' },
+  { label: '🧑‍💼 Agents', key: 'agents' }, // New tab for agent management
 ];
 
 export default function AdminDashboardScreen() {
   const [activeTab, setActiveTab] = useState(0);
-  const [hostels, setHostels] = useState(mockHostels);
-  const [bookings, setBookings] = useState(mockBookings);
-  const [rooms, setRooms] = useState(mockRooms);
-  const [payments, setPayments] = useState(mockPayments);
+  const [hostels, setHostels] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [payments, setPayments] = useState([]); // Placeholder for future
+  const [loadingHostels, setLoadingHostels] = useState(true);
+  const [loadingRooms, setLoadingRooms] = useState(true);
+  const [loadingBookings, setLoadingBookings] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [editHostel, setEditHostel] = useState(null);
   const [hostelForm, setHostelForm] = useState({ name: '', gender: '', rooms: '' });
@@ -24,6 +30,49 @@ export default function AdminDashboardScreen() {
   const [editRoom, setEditRoom] = useState(null);
   const [roomForm, setRoomForm] = useState({ hostelId: '', name: '', type: '', price: '', capacity: '', occupied: '' });
   const [roomHostelFilter, setRoomHostelFilter] = useState('');
+  const [agents, setAgents] = useState(mockAgents);
+  const [users, setUsers] = useState(mockUsers);
+  const [savingHostel, setSavingHostel] = useState(false);
+  const [savingRoom, setSavingRoom] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [errorHostels, setErrorHostels] = useState(null);
+  const [errorRooms, setErrorRooms] = useState(null);
+  const [errorBookings, setErrorBookings] = useState(null);
+
+  const mockAgents = [
+    { id: 'a1', name: 'Agent Smith', email: 'agent1@hostel.com' },
+    { id: 'a2', name: 'Agent Jane', email: 'agent2@hostel.com' },
+  ];
+  const mockUsers = [
+    { id: 'u1', name: 'Alice', email: 'alice@hostel.com', isAgent: false },
+    { id: 'u2', name: 'Bob', email: 'bob@hostel.com', isAgent: false },
+  ];
+
+  useEffect(() => {
+    setErrorHostels(null); setErrorRooms(null); setErrorBookings(null);
+    const unsubHostels = onSnapshot(collection(db, 'hostels'), (snapshot) => {
+      setHostels(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoadingHostels(false);
+    }, (err) => { setErrorHostels('Failed to load hostels.'); setLoadingHostels(false); });
+    const unsubRooms = onSnapshot(collection(db, 'rooms'), (snapshot) => {
+      setRooms(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoadingRooms(false);
+    }, (err) => { setErrorRooms('Failed to load rooms.'); setLoadingRooms(false); });
+    const unsubBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
+      setBookings(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoadingBookings(false);
+    }, (err) => { setErrorBookings('Failed to load bookings.'); setLoadingBookings(false); });
+    const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoadingUsers(false);
+    });
+    return () => {
+      unsubHostels();
+      unsubRooms();
+      unsubBookings();
+      unsubUsers();
+    };
+  }, []);
 
   // Hostels CRUD
   const openAddHostel = () => {
@@ -36,28 +85,30 @@ export default function AdminDashboardScreen() {
     setHostelForm({ name: hostel.name, gender: hostel.gender, rooms: String(hostel.rooms) });
     setModalVisible(true);
   };
-  const saveHostel = () => {
+  const saveHostel = async () => {
     if (!hostelForm.name || !hostelForm.gender || !hostelForm.rooms) {
       Alert.alert('Error', 'Please fill all fields');
       return;
     }
+    setSavingHostel(true);
     if (editHostel) {
-      setHostels(hostels.map(h => h.id === editHostel.id ? { ...editHostel, ...hostelForm, rooms: Number(hostelForm.rooms) } : h));
+      await updateDoc(doc(db, 'hostels', editHostel.id), { ...hostelForm, rooms: Number(hostelForm.rooms) });
     } else {
-      setHostels([...hostels, { id: Date.now().toString(), ...hostelForm, rooms: Number(hostelForm.rooms) }]);
+      await addDoc(collection(db, 'hostels'), { ...hostelForm, rooms: Number(hostelForm.rooms) });
     }
     setModalVisible(false);
+    setSavingHostel(false);
   };
-  const deleteHostel = (id) => {
-    setHostels(hostels.filter(h => h.id !== id));
+  const deleteHostel = async (id) => {
+    await deleteDoc(doc(db, 'hostels', id));
   };
 
   // Bookings
-  const approveBooking = (id) => {
-    setBookings(bookings.map(b => b.id === id ? { ...b, status: 'Approved' } : b));
+  const approveBooking = async (id) => {
+    await updateDoc(doc(db, 'bookings', id), { status: 'Approved' });
   };
-  const rejectBooking = (id) => {
-    setBookings(bookings.filter(b => b.id !== id));
+  const rejectBooking = async (id) => {
+    await deleteDoc(doc(db, 'bookings', id));
   };
 
   // Room CRUD
@@ -78,20 +129,22 @@ export default function AdminDashboardScreen() {
     });
     setRoomModalVisible(true);
   };
-  const saveRoom = () => {
+  const saveRoom = async () => {
     if (!roomForm.hostelId || !roomForm.name || !roomForm.type || !roomForm.price || !roomForm.capacity) {
       Alert.alert('Error', 'Please fill all fields');
       return;
     }
+    setSavingRoom(true);
     if (editRoom) {
-      setRooms(rooms.map(r => r.id === editRoom.id ? { ...editRoom, ...roomForm, price: Number(roomForm.price), capacity: Number(roomForm.capacity), occupied: Number(roomForm.occupied) || 0 } : r));
+      await updateDoc(doc(db, 'rooms', editRoom.id), { ...roomForm, price: Number(roomForm.price), capacity: Number(roomForm.capacity), occupied: Number(roomForm.occupied) || 0 });
     } else {
-      setRooms([...rooms, { id: Date.now().toString(), ...roomForm, price: Number(roomForm.price), capacity: Number(roomForm.capacity), occupied: Number(roomForm.occupied) || 0 }]);
+      await addDoc(collection(db, 'rooms'), { ...roomForm, price: Number(roomForm.price), capacity: Number(roomForm.capacity), occupied: Number(roomForm.occupied) || 0 });
     }
     setRoomModalVisible(false);
+    setSavingRoom(false);
   };
-  const deleteRoom = (id) => {
-    setRooms(rooms.filter(r => r.id !== id));
+  const deleteRoom = async (id) => {
+    await deleteDoc(doc(db, 'rooms', id));
   };
 
   return (
@@ -159,6 +212,7 @@ export default function AdminDashboardScreen() {
                     </View>
                   </View>
                 )}
+                ListEmptyComponent={loadingHostels ? <Text style={styles.placeholder}>Loading hostels...</Text> : <Text style={styles.placeholder}>No hostels found. Add a hostel to get started.</Text>}
                 contentContainerStyle={{ paddingBottom: 24 }}
               />
               <Modal
@@ -190,7 +244,9 @@ export default function AdminDashboardScreen() {
                       keyboardType="numeric"
                     />
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
-                      <TouchableOpacity style={styles.saveBtn} onPress={saveHostel} accessible={true} accessibilityLabel={editHostel ? 'Save hostel changes' : 'Add hostel'} activeOpacity={0.7}><Text style={styles.saveBtnText}>Save</Text></TouchableOpacity>
+                      <TouchableOpacity style={styles.saveBtn} onPress={saveHostel} accessible={true} accessibilityLabel={editHostel ? 'Save hostel changes' : 'Add hostel'} activeOpacity={0.7} disabled={savingHostel || !hostelForm.name || !hostelForm.gender || !hostelForm.rooms}>
+                        <Text style={styles.saveBtnText}>{savingHostel ? 'Saving...' : 'Save'}</Text>
+                      </TouchableOpacity>
                       <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)} accessible={true} accessibilityLabel="Cancel" activeOpacity={0.7}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
                     </View>
                   </View>
@@ -250,7 +306,7 @@ export default function AdminDashboardScreen() {
                     </View>
                   </View>
                 )}
-                ListEmptyComponent={<Text style={styles.placeholder}>No rooms found.</Text>}
+                ListEmptyComponent={loadingRooms ? <Text style={styles.placeholder}>Loading rooms...</Text> : <Text style={styles.placeholder}>No rooms found. Add a room to get started.</Text>}
                 contentContainerStyle={{ paddingBottom: 24 }}
               />
               <Modal
@@ -313,7 +369,9 @@ export default function AdminDashboardScreen() {
                       keyboardType="numeric"
                     />
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
-                      <TouchableOpacity style={styles.saveBtn} onPress={saveRoom} accessible={true} accessibilityLabel={editRoom ? 'Save room changes' : 'Add room'} activeOpacity={0.7}><Text style={styles.saveBtnText}>Save</Text></TouchableOpacity>
+                      <TouchableOpacity style={styles.saveBtn} onPress={saveRoom} accessible={true} accessibilityLabel={editRoom ? 'Save room changes' : 'Add room'} activeOpacity={0.7} disabled={savingRoom || !roomForm.hostelId || !roomForm.name || !roomForm.type || !roomForm.price || !roomForm.capacity}>
+                        <Text style={styles.saveBtnText}>{savingRoom ? 'Saving...' : 'Save'}</Text>
+                      </TouchableOpacity>
                       <TouchableOpacity style={styles.cancelBtn} onPress={() => setRoomModalVisible(false)} accessible={true} accessibilityLabel="Cancel" activeOpacity={0.7}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
                     </View>
                   </View>
@@ -355,7 +413,7 @@ export default function AdminDashboardScreen() {
                   </View>
                 );
               }}
-              ListEmptyComponent={<Text style={styles.placeholder}>No pending bookings.</Text>}
+              ListEmptyComponent={loadingBookings ? <Text style={styles.placeholder}>Loading bookings...</Text> : <Text style={styles.placeholder}>No pending bookings.</Text>}
               contentContainerStyle={{ paddingBottom: 24 }}
             />
           )}
@@ -393,6 +451,38 @@ export default function AdminDashboardScreen() {
               ListEmptyComponent={<Text style={styles.placeholder}>No payment records.</Text>}
               contentContainerStyle={{ paddingBottom: 24 }}
             />
+          )}
+          {activeTab === 5 && (
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.primary, marginBottom: 12 }}>User Management</Text>
+              {loadingUsers ? <Text style={{ color: colors.textSecondary }}>Loading users...</Text> : null}
+              <FlatList
+                data={users}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => (
+                  <View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 12, marginBottom: 8 }}>
+                    <Text style={{ fontWeight: 'bold', color: colors.textPrimary }}>{item.name}</Text>
+                    <Text style={{ color: colors.textSecondary }}>{item.email}</Text>
+                    <Text style={{ color: colors.textSecondary }}>Role: {item.role}</Text>
+                    <View style={{ flexDirection: 'row', marginTop: 6 }}>
+                      {['user', 'agent', 'admin'].map(role => (
+                        <TouchableOpacity
+                          key={role}
+                          style={{ marginRight: 8, padding: 6, borderRadius: 6, backgroundColor: item.role === role ? colors.primary : colors.surface, borderWidth: 1, borderColor: colors.primary }}
+                          onPress={async () => {
+                            await updateDoc(doc(db, 'users', item.id), { role });
+                          }}
+                          disabled={item.role === role}
+                        >
+                          <Text style={{ color: item.role === role ? '#fff' : colors.primary, fontWeight: 'bold' }}>{role.charAt(0).toUpperCase() + role.slice(1)}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                )}
+                ListEmptyComponent={<Text style={{ color: colors.textSecondary }}>No users found.</Text>}
+              />
+            </View>
           )}
         </View>
       </View>

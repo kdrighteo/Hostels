@@ -7,6 +7,7 @@ export default function PaymentScreen({ route, navigation }) {
   const [paymentMethod, setPaymentMethod] = useState('Mobile Money');
   const [processing, setProcessing] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
   const bookingId = '123455';
   const room = route.params?.room || { name: 'Room A1', type: 'Double', price: 300, term: 'term' };
   const hostel = route.params?.hostel || { name: 'Jubilee Hostel' };
@@ -21,7 +22,7 @@ export default function PaymentScreen({ route, navigation }) {
 
   const handleModalClose = () => {
     setShowModal(false);
-    navigation.navigate('MainTabs', { screen: 'Bookings' });
+    setShowReceipt(true);
   };
 
   return (
@@ -79,7 +80,24 @@ export default function PaymentScreen({ route, navigation }) {
             <MaterialIcons name="check-circle" size={48} color={colors.success} />
             <Text style={styles.modalTitle}>Payment Successful!</Text>
             <Text style={styles.modalMsg}>Your booking has been confirmed.</Text>
-            <TouchableOpacity style={styles.button} onPress={handleModalClose} accessible={true} accessibilityLabel="Go to Bookings">
+            <TouchableOpacity style={styles.button} onPress={handleModalClose} accessible={true} accessibilityLabel="Show Receipt">
+              <Text style={styles.buttonText}>Show Receipt</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      {/* Receipt Modal */}
+      <Modal visible={showReceipt} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <MaterialIcons name="receipt" size={40} color={colors.primary} />
+            <Text style={styles.modalTitle}>Payment Receipt</Text>
+            <Text style={styles.modalMsg}>Booking ID: {bookingId}</Text>
+            <Text style={styles.modalMsg}>Hostel: {hostel.name}</Text>
+            <Text style={styles.modalMsg}>Room: {room.name} ({room.type})</Text>
+            <Text style={styles.modalMsg}>Amount Paid: ${room.price}</Text>
+            <Text style={styles.modalMsg}>Payment Method: {paymentMethod}</Text>
+            <TouchableOpacity style={styles.button} onPress={() => { setShowReceipt(false); navigation.navigate('MainTabs', { screen: 'Bookings' }); }} accessible={true} accessibilityLabel="Go to Bookings">
               <Text style={styles.buttonText}>Go to Bookings</Text>
             </TouchableOpacity>
           </View>
