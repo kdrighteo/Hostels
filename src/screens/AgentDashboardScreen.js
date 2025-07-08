@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView, ActivityIndicator } from 'react-native';
 import colors from '../theme';
 import { db } from '../firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
@@ -58,7 +58,10 @@ export default function AgentDashboardScreen() {
         <View style={styles.content}>
           {activeTab === 0 && (
             loading ? (
-              <Text style={styles.placeholder}>Loading assigned bookings...</Text>
+              <View style={{ alignItems: 'center', marginTop: 60 }}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={{ color: colors.textSecondary, marginTop: 16 }}>Loading assigned bookings...</Text>
+              </View>
             ) : error ? (
               <Text style={styles.placeholder}>{error}</Text>
             ) : hasBookings ? (
@@ -74,7 +77,10 @@ export default function AgentDashboardScreen() {
                 contentContainerStyle={{ paddingBottom: 24 }}
               />
             ) : (
-              <Text style={styles.placeholder}>No assigned bookings yet. You will see bookings here when assigned by admin.</Text>
+              <View style={{ alignItems: 'center', marginTop: 60 }}>
+                <Text style={{ fontSize: 48 }}>🧑‍💼</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 18, marginTop: 12 }}>No assigned bookings yet.</Text>
+              </View>
             )
           )}
           {activeTab === 1 && (

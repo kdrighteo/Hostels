@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import colors from '../theme';
 import { Inter_700Bold, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import { useEffect, useState, useContext } from 'react';
@@ -60,7 +60,10 @@ export default function MyBookingsScreen({ bookings: propBookings }) {
       <View style={styles.container}>
         <Text style={styles.title}>My Bookings</Text>
         {loading ? (
-          <Text style={{ textAlign: 'center', marginTop: 40 }}>Loading bookings...</Text>
+          <View style={{ alignItems: 'center', marginTop: 60 }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={{ color: colors.textSecondary, marginTop: 16 }}>Loading bookings...</Text>
+          </View>
         ) : error ? (
           <Text style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>{error}</Text>
         ) : bookings.length === 0 ? (

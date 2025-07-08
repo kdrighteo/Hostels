@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert, SafeAreaView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert, SafeAreaView, Image, ActivityIndicator } from 'react-native';
 import colors from '../theme';
 import { db } from '../firebase';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
@@ -446,7 +446,17 @@ export default function AdminDashboardScreen() {
                   </View>
                 );
               }}
-              ListEmptyComponent={loadingBookings ? <Text style={styles.placeholder}>Loading bookings...</Text> : <Text style={styles.placeholder}>No pending bookings.</Text>}
+              ListEmptyComponent={loadingBookings ? (
+                <View style={{ alignItems: 'center', marginTop: 60 }}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                  <Text style={{ color: colors.textSecondary, marginTop: 16 }}>Loading bookings...</Text>
+                </View>
+              ) : (
+                <View style={{ alignItems: 'center', marginTop: 60 }}>
+                  <Text style={{ fontSize: 48 }}>📋</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 18, marginTop: 12 }}>No pending bookings at the moment.</Text>
+                </View>
+              )}
               contentContainerStyle={{ paddingBottom: 24 }}
             />
           )}

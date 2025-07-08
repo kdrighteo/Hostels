@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Animated, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Animated, SafeAreaView, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import colors from '../theme';
 import { db } from '../firebase';
@@ -99,9 +99,17 @@ export default function RoomListScreen({ route, navigation }) {
           </View>
         </View>
         {loading ? (
-          <Text style={{ textAlign: 'center', marginTop: 40 }}>Loading rooms...</Text>
+          <View style={{ alignItems: 'center', marginTop: 60 }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={{ color: colors.textSecondary, marginTop: 16 }}>Loading rooms...</Text>
+          </View>
         ) : error ? (
           <Text style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>{error}</Text>
+        ) : Object.keys(groupedRooms).length === 0 ? (
+          <View style={{ alignItems: 'center', marginTop: 60 }}>
+            <Text style={{ fontSize: 48 }}>🛏️</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 18, marginTop: 12 }}>No rooms found. Please check back later.</Text>
+          </View>
         ) : (
           Object.keys(groupedRooms).sort((a, b) => a - b).map(floor => (
             <View key={floor} style={styles.floorSection}>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Image, ActivityIndicator } from 'react-native';
 import colors from '../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../firebase';
@@ -41,7 +41,10 @@ export default function HomeScreen({ navigation }) {
         accessibilityLabel="Search hostel input"
       />
       {loading ? (
-        <Text style={{ textAlign: 'center', marginTop: 40 }}>Loading hostels...</Text>
+        <View style={{ alignItems: 'center', marginTop: 60 }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={{ color: colors.textSecondary, marginTop: 16 }}>Loading hostels...</Text>
+        </View>
       ) : error ? (
         <Text style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>{error}</Text>
       ) : filteredHostels.length === 0 ? (
