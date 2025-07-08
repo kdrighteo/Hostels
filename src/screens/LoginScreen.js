@@ -5,8 +5,9 @@ import { useFonts } from 'expo-font';
 import { Inter_700Bold, Inter_500Medium, Inter_400Regular } from '@expo-google-fonts/inter';
 import { UserContext } from '../../App';
 import { db, auth } from '../firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import Toast from 'react-native-toast-message';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -15,6 +16,8 @@ export default function LoginScreen({ navigation }) {
   const [fullName, setFullName] = useState('');
   const [institution, setInstitution] = useState('');
   const [contactNumber, setContactNumber] = useState('');
+  const [showVerify, setShowVerify] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const { setUser } = useContext(UserContext);
 
   const handleAuth = async () => {
@@ -34,8 +37,10 @@ export default function LoginScreen({ navigation }) {
           email,
           role: 'user',
         });
-        setUser({ id: userId, name: fullName, institution, contactNumber, email, role: 'user' });
-        navigation.replace('MainTabs');
+        await sendEmailVerification(userCred.user);
+        setRegisteredEmail(email);
+        setShowVerify(true);
+        Toast.show({ type: 'success', text1: 'Verification email sent', text2: 'Please check your inbox.' });
       } catch (err) {
         Alert.alert('Registration Error', err.message);
       }
@@ -47,6 +52,12 @@ export default function LoginScreen({ navigation }) {
     }
     try {
       const userCred = await signInWithEmailAndPassword(auth, email, password);
+      if (!userCred.user.emailVerified) {
+        setRegisteredEmail(email);
+        setShowVerify(true);
+        Toast.show({ type: 'error', text1: 'Email not verified', text2: 'Please verify your email.' });
+        return;
+      }
       const userId = userCred.user.uid;
       // Fetch profile from Firestore
       const userSnap = await getDoc(doc(db, 'users', userId));
@@ -59,6 +70,29 @@ export default function LoginScreen({ navigation }) {
       navigation.replace('MainTabs');
     } catch (err) {
       Alert.alert('Login Error', err.message);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    try {
+      const userCred = await signInWithEmailAndPassword(auth, registeredEmail, password);
+      await sendEmailVerification(userCred.user);
+      Toast.show({ type: 'success', text1: 'Verification email resent', text2: 'Check your inbox.' });
+    } catch (err) {
+      Toast.show({ type: 'error', text1: 'Resend failed', text2: err.message });
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      Toast.show({ type: 'error', text1: 'Enter your email to reset password.' });
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      Toast.show({ type: 'success', text1: 'Password reset email sent', text2: 'Check your inbox.' });
+    } catch (err) {
+      Toast.show({ type: 'error', text1: 'Reset failed', text2: err.message });
     }
   };
 
@@ -131,14 +165,27 @@ export default function LoginScreen({ navigation }) {
             accessibilityLabel="Password input"
           />
           <TouchableOpacity
-            style={styles.button}
             onPress={handleAuth}
             accessible={true}
             accessibilityLabel={isRegister ? 'Register' : 'Login'}
             activeOpacity={0.7}
+            style={styles.button}
           >
             <Text style={styles.buttonText}>{isRegister ? 'Register' : 'Login'}</Text>
           </TouchableOpacity>
+          {!isRegister && (
+            <TouchableOpacity onPress={handleForgotPassword} style={{ marginTop: 12 }}>
+              <Text style={{ color: colors.primary, textAlign: 'center' }}>Forgot Password?</Text>
+            </TouchableOpacity>
+          )}
+          {showVerify && (
+            <View style={{ marginTop: 24, alignItems: 'center' }}>
+              <Text style={{ color: colors.error, marginBottom: 8 }}>Please verify your email to continue.</Text>
+              <TouchableOpacity onPress={handleResendVerification} style={{ backgroundColor: colors.primary, padding: 10, borderRadius: 8 }}>
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Resend Verification Email</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           <TouchableOpacity
             onPress={() => setIsRegister(!isRegister)}
             accessible={true}
@@ -151,6 +198,7 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+      <Toast />
     </SafeAreaView>
   );
 }

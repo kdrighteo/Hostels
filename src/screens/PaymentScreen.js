@@ -2,21 +2,31 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Modal, ActivityIndicator } from 'react-native';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import colors from '../theme';
+import { db } from '../firebase';
+import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 
 export default function PaymentScreen({ route, navigation }) {
   const [paymentMethod, setPaymentMethod] = useState('Mobile Money');
   const [processing, setProcessing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
-  const bookingId = '123455';
+  const bookingId = route.params?.bookingId;
   const room = route.params?.room || { name: 'Room A1', type: 'Double', price: 300, term: 'term' };
   const hostel = route.params?.hostel || { name: 'Jubilee Hostel' };
 
-  const handlePay = () => {
+  const handlePay = async () => {
     setProcessing(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       setProcessing(false);
       setShowModal(true);
+      // Update booking as paid in Firestore
+      try {
+        if (bookingId) {
+          await updateDoc(doc(db, 'bookings', bookingId), { paid: true });
+        }
+      } catch (err) {
+        console.warn('Failed to update booking as paid:', err);
+      }
     }, 1500);
   };
 

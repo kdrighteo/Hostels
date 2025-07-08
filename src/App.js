@@ -3,6 +3,7 @@ import { db } from './src/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { NavigationContainer } from '@react-navigation/native';
 import { View, Text } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export default function App() {
   const [firebaseConnected, setFirebaseConnected] = useState(true);
@@ -29,6 +30,7 @@ export default function App() {
           </Text>
         </View>
       )}
+      <Toast />
     </NavigationContainer>
   );
 } 

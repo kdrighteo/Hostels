@@ -4,6 +4,7 @@ import colors from '../theme';
 import { db } from '../firebase';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { mockHostels, mockRooms, mockBookings, mockPayments } from '../data/mockData';
+import Toast from 'react-native-toast-message';
 
 const TABS = [
   { label: '📊 Overview', key: 'overview' },
@@ -91,24 +92,45 @@ export default function AdminDashboardScreen() {
       return;
     }
     setSavingHostel(true);
-    if (editHostel) {
-      await updateDoc(doc(db, 'hostels', editHostel.id), { ...hostelForm, rooms: Number(hostelForm.rooms) });
-    } else {
-      await addDoc(collection(db, 'hostels'), { ...hostelForm, rooms: Number(hostelForm.rooms) });
+    try {
+      if (editHostel) {
+        await updateDoc(doc(db, 'hostels', editHostel.id), { ...hostelForm, rooms: Number(hostelForm.rooms) });
+        Toast.show({ type: 'success', text1: 'Hostel Updated' });
+      } else {
+        await addDoc(collection(db, 'hostels'), { ...hostelForm, rooms: Number(hostelForm.rooms) });
+        Toast.show({ type: 'success', text1: 'Hostel Added' });
+      }
+    } catch (err) {
+      Toast.show({ type: 'error', text1: 'Hostel Save Failed', text2: err.message });
     }
     setModalVisible(false);
     setSavingHostel(false);
   };
   const deleteHostel = async (id) => {
-    await deleteDoc(doc(db, 'hostels', id));
+    try {
+      await deleteDoc(doc(db, 'hostels', id));
+      Toast.show({ type: 'success', text1: 'Hostel Deleted' });
+    } catch (err) {
+      Toast.show({ type: 'error', text1: 'Delete Failed', text2: err.message });
+    }
   };
 
   // Bookings
   const approveBooking = async (id) => {
-    await updateDoc(doc(db, 'bookings', id), { status: 'Approved' });
+    try {
+      await updateDoc(doc(db, 'bookings', id), { status: 'Approved' });
+      Toast.show({ type: 'success', text1: 'Booking Approved' });
+    } catch (err) {
+      Toast.show({ type: 'error', text1: 'Approval Failed', text2: err.message });
+    }
   };
   const rejectBooking = async (id) => {
-    await deleteDoc(doc(db, 'bookings', id));
+    try {
+      await deleteDoc(doc(db, 'bookings', id));
+      Toast.show({ type: 'success', text1: 'Booking Rejected' });
+    } catch (err) {
+      Toast.show({ type: 'error', text1: 'Rejection Failed', text2: err.message });
+    }
   };
 
   // Room CRUD
@@ -135,16 +157,27 @@ export default function AdminDashboardScreen() {
       return;
     }
     setSavingRoom(true);
-    if (editRoom) {
-      await updateDoc(doc(db, 'rooms', editRoom.id), { ...roomForm, price: Number(roomForm.price), capacity: Number(roomForm.capacity), occupied: Number(roomForm.occupied) || 0 });
-    } else {
-      await addDoc(collection(db, 'rooms'), { ...roomForm, price: Number(roomForm.price), capacity: Number(roomForm.capacity), occupied: Number(roomForm.occupied) || 0 });
+    try {
+      if (editRoom) {
+        await updateDoc(doc(db, 'rooms', editRoom.id), { ...roomForm, price: Number(roomForm.price), capacity: Number(roomForm.capacity), occupied: Number(roomForm.occupied) || 0 });
+        Toast.show({ type: 'success', text1: 'Room Updated' });
+      } else {
+        await addDoc(collection(db, 'rooms'), { ...roomForm, price: Number(roomForm.price), capacity: Number(roomForm.capacity), occupied: Number(roomForm.occupied) || 0 });
+        Toast.show({ type: 'success', text1: 'Room Added' });
+      }
+    } catch (err) {
+      Toast.show({ type: 'error', text1: 'Room Save Failed', text2: err.message });
     }
     setRoomModalVisible(false);
     setSavingRoom(false);
   };
   const deleteRoom = async (id) => {
-    await deleteDoc(doc(db, 'rooms', id));
+    try {
+      await deleteDoc(doc(db, 'rooms', id));
+      Toast.show({ type: 'success', text1: 'Room Deleted' });
+    } catch (err) {
+      Toast.show({ type: 'error', text1: 'Delete Failed', text2: err.message });
+    }
   };
 
   return (
@@ -176,7 +209,7 @@ export default function AdminDashboardScreen() {
                 <Text style={styles.cardLabel}>Rooms</Text>
               </View>
               <View style={styles.card}>
-                <Text style={styles.cardValue}>{bookings.filter(b => b.status === 'pending').length}</Text>
+                <Text style={styles.cardValue}>{bookings.filter(b => (b.status || '').trim().toLowerCase() === 'pending').length}</Text>
                 <Text style={styles.cardLabel}>Pending Bookings</Text>
               </View>
               <View style={styles.card}>
@@ -381,7 +414,7 @@ export default function AdminDashboardScreen() {
           )}
           {activeTab === 3 && (
             <FlatList
-              data={bookings.filter(b => b.status === 'pending' || b.status === 'Pending')}
+              data={bookings.filter(b => (b.status || '').trim().toLowerCase() === 'pending')}
               keyExtractor={item => item.id}
               renderItem={({ item }) => {
                 const userName = item.name || item.student || 'User';
@@ -471,6 +504,7 @@ export default function AdminDashboardScreen() {
                           style={{ marginRight: 8, padding: 6, borderRadius: 6, backgroundColor: item.role === role ? colors.primary : colors.surface, borderWidth: 1, borderColor: colors.primary }}
                           onPress={async () => {
                             await updateDoc(doc(db, 'users', item.id), { role });
+                            Toast.show({ type: 'success', text1: `Role changed to ${role}` });
                           }}
                           disabled={item.role === role}
                         >
@@ -486,6 +520,7 @@ export default function AdminDashboardScreen() {
           )}
         </View>
       </View>
+      <Toast />
     </SafeAreaView>
   );
 }

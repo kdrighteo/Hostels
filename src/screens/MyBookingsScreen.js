@@ -4,7 +4,7 @@ import colors from '../theme';
 import { Inter_700Bold, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import { useEffect, useState, useContext } from 'react';
 import { db } from '../firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { UserContext } from '../../App';
 
 const mockBookings = [
@@ -18,6 +18,8 @@ export default function MyBookingsScreen({ bookings: propBookings }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [rooms, setRooms] = useState([]);
+  const [hostels, setHostels] = useState([]);
 
   useEffect(() => {
     setLoading(true);
@@ -25,13 +27,32 @@ export default function MyBookingsScreen({ bookings: propBookings }) {
     if (!user?.id) return;
     const q = query(collection(db, 'bookings'), where('userId', '==', user.id));
     const unsub = onSnapshot(q, (snapshot) => {
-      setBookings(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setBookings(fetched);
+      console.log('Fetched bookings for user:', user.id, fetched);
       setLoading(false);
     }, (err) => {
       setError('Failed to load bookings. Please check your connection or Firestore rules.');
       setLoading(false);
     });
-    return unsub;
+
+    // Fetch all rooms
+    const unsubRooms = onSnapshot(collection(db, 'rooms'), (snapshot) => {
+      const fetchedRooms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRooms(fetchedRooms);
+      console.log('Fetched rooms:', fetchedRooms);
+    });
+    // Fetch all hostels
+    const unsubHostels = onSnapshot(collection(db, 'hostels'), (snapshot) => {
+      const fetchedHostels = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setHostels(fetchedHostels);
+      console.log('Fetched hostels:', fetchedHostels);
+    });
+    return () => {
+      unsub();
+      unsubRooms();
+      unsubHostels();
+    };
   }, [user?.id]);
 
   return (
@@ -42,35 +63,47 @@ export default function MyBookingsScreen({ bookings: propBookings }) {
           <Text style={{ textAlign: 'center', marginTop: 40 }}>Loading bookings...</Text>
         ) : error ? (
           <Text style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>{error}</Text>
+        ) : bookings.length === 0 ? (
+          <View style={{ alignItems: 'center', marginTop: 60 }}>
+            <Text style={{ fontSize: 48 }}>📄</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 18, marginTop: 12 }}>No bookings yet. Start by booking a room!</Text>
+          </View>
         ) : (
           <FlatList
             data={bookings}
             keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.bookingCard}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{item.room.charAt(0)}</Text>
+            renderItem={({ item }) => {
+              const room = rooms.find(r => r.id === item.roomId);
+              const hostel = hostels.find(h => h.id === item.hostelId);
+              if (!room) console.warn('Room not found for booking:', item);
+              if (!hostel) console.warn('Hostel not found for booking:', item);
+              return (
+                <View style={styles.bookingCard}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={styles.avatar}>
+                      <Text style={styles.avatarText}>{(room?.name || item.room || item.roomId || '?')[0]}</Text>
+                    </View>
+                    <Text style={styles.roomName}>{room?.name || item.room || item.roomId || 'Room (not found)'}</Text>
+                    <Text style={styles.roomType}>{room?.type || item.type || ''}</Text>
                   </View>
-                  <Text style={styles.roomName}>{item.room}</Text>
-                  <Text style={styles.roomType}>{item.type}</Text>
+                  <Text style={{ color: '#888', marginTop: 2, marginBottom: 2 }}>{hostel?.name || 'Hostel (not found)'}</Text>
+                  <View style={styles.statusRow}>
+                    <Text style={styles.status}>{item.status || 'Pending'}</Text>
+                    <Text style={[styles.paid, { color: item.paid ? 'green' : 'red' }]}>{item.paid ? 'Paid' : 'Unpaid'}</Text>
+                  </View>
+                  <View style={styles.manageRow}>
+                    <TouchableOpacity
+                      style={styles.manageBtn}
+                      accessible={true}
+                      accessibilityLabel={`Manage booking for ${room?.name || item.room || item.roomId || 'Room (not found)'}`}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.manageText}>Manage Room</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <View style={styles.statusRow}>
-                  <Text style={styles.status}>{item.status}</Text>
-                  <Text style={[styles.paid, { color: item.paid ? 'green' : 'red' }]}>{item.paid ? 'Paid' : 'Unpaid'}</Text>
-                </View>
-                <View style={styles.manageRow}>
-                  <TouchableOpacity
-                    style={styles.manageBtn}
-                    accessible={true}
-                    accessibilityLabel={`Manage booking for ${item.room}`}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.manageText}>Manage Room</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
+              );
+            }}
             contentContainerStyle={{ paddingBottom: 24 }}
           />
         )}

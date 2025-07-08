@@ -16,6 +16,7 @@ import AdminDashboardScreen from './src/screens/AdminDashboardScreen';
 import SplashScreen from './src/screens/SplashScreen';
 import MainTabs from './src/navigation/MainTabs';
 import SupportChatScreen from './src/screens/SupportChatScreen';
+import BookingDetailsScreen from './src/screens/BookingDetailsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -51,6 +52,7 @@ export default function App() {
           <Stack.Screen name="Booking" component={BookingScreen} />
           <Stack.Screen name="Payment" component={PaymentScreen} />
           <Stack.Screen name="SupportChat" component={SupportChatScreen} options={{ title: 'Support Chat' }} />
+          <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} options={{ title: 'Booking Details' }} />
         </Stack.Navigator>
       </NavigationContainer>
     </UserContext.Provider>

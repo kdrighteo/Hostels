@@ -5,6 +5,7 @@ import * as Notifications from 'expo-notifications';
 import { UserContext } from '../../App';
 import { db } from '../firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import Toast from 'react-native-toast-message';
 
 export default function BookingScreen({ route, navigation }) {
   const room = route.params?.room || { name: 'Room A1', type: 'Double', price: 300, term: 'term', occupied: 2, capacity: 2 };
@@ -20,26 +21,33 @@ export default function BookingScreen({ route, navigation }) {
 
   const handleBooking = async () => {
     setLoading(true);
-    // Send local notification
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Booking Confirmed',
-        body: `Your booking for ${room.name} at ${hostel.name} is confirmed!`,
-      },
-      trigger: null,
-    });
-    // Add booking to Firestore
-    await addDoc(collection(db, 'bookings'), {
-      userId: user?.id || '',
-      hostelId: hostel.id,
-      roomId: room.id,
-      status: 'Pending',
-      date: new Date().toISOString(),
-      name: user?.name || '',
-      email: user?.email || '',
-    });
-    setLoading(false);
-    navigation.navigate('Payment', { room, hostel });
+    try {
+      // Send local notification
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Booking Confirmed',
+          body: `Your booking for ${room.name} at ${hostel.name} is confirmed!`,
+        },
+        trigger: null,
+      });
+      // Add booking to Firestore
+      const bookingRef = await addDoc(collection(db, 'bookings'), {
+        userId: user?.id || '',
+        hostelId: hostel.id,
+        roomId: room.id,
+        status: 'Pending',
+        date: new Date().toISOString(),
+        name: user?.name || '',
+        email: user?.email || '',
+        paid: false,
+      });
+      Toast.show({ type: 'success', text1: 'Booking Confirmed', text2: `Your booking for ${room.name} is confirmed!` });
+      setLoading(false);
+      navigation.navigate('Payment', { room, hostel, bookingId: bookingRef.id });
+    } catch (err) {
+      setLoading(false);
+      Toast.show({ type: 'error', text1: 'Booking Failed', text2: err.message });
+    }
   };
 
   return (

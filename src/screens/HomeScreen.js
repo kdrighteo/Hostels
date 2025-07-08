@@ -44,6 +44,11 @@ export default function HomeScreen({ navigation }) {
         <Text style={{ textAlign: 'center', marginTop: 40 }}>Loading hostels...</Text>
       ) : error ? (
         <Text style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>{error}</Text>
+      ) : filteredHostels.length === 0 ? (
+        <View style={{ alignItems: 'center', marginTop: 60 }}>
+          <Text style={{ fontSize: 48 }}>🏠</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 18, marginTop: 12 }}>No hostels found. Please check back later.</Text>
+        </View>
       ) : (
         <FlatList
           data={filteredHostels}
