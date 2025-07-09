@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Image, ActivityIndicator, ScrollView } from 'react-native';
 import colors from '../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../firebase';
@@ -56,22 +56,49 @@ export default function HomeScreen({ navigation }) {
         <FlatList
           data={filteredHostels}
           keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.hostelCard}
-              onPress={() => navigation.navigate('HostelDetails', { hostel: item })}
-              accessible={true}
-              accessibilityLabel={`View details for ${item.name}`}
-              activeOpacity={0.8}
-            >
-              <Image source={{ uri: item.image }} style={styles.hostelImage} />
-              <View style={styles.hostelDetails}>
-                <Text style={styles.hostelName}>{item.name}</Text>
-                <Text style={styles.hostelInfo}>Gender: {item.gender} | {item.roomsLeft} Rooms Left</Text>
-                <Text style={styles.hostelDesc}>{item.description}</Text>
-              </View>
-            </TouchableOpacity>
-          )}
+          renderItem={({ item }) => {
+            // Calculate number of rooms left and lowest price
+            const rooms = item.rooms || [];
+            const roomTypes = Array.isArray(item.roomTypes) ? item.roomTypes : [];
+            const allTypes = roomTypes.length > 0 ? roomTypes : [
+              { type: 'Single Bed', price: null, roomsLeft: null },
+              { type: 'Double Beds', price: null, roomsLeft: null },
+              { type: '4 Beds', price: null, roomsLeft: null },
+            ];
+            let lowestPrice = null;
+            let totalRoomsLeft = 0;
+            allTypes.forEach(rt => {
+              if (rt.price && (lowestPrice === null || rt.price < lowestPrice)) lowestPrice = rt.price;
+              if (rt.roomsLeft) totalRoomsLeft += rt.roomsLeft;
+            });
+            return (
+              <TouchableOpacity
+                style={styles.hostelCard}
+                onPress={() => navigation.navigate('HostelDetails', { hostel: item })}
+                accessible={true}
+                accessibilityLabel={`View details for ${item.name}`}
+                activeOpacity={0.8}
+              >
+                {/* Image Gallery */}
+                {item.images && item.images.length > 0 ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ height: 140 }}>
+                    {item.images.map((url, idx) => (
+                      <Image key={idx} source={{ uri: url }} style={styles.hostelImage} />
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <Image source={{ uri: item.image }} style={styles.hostelImage} />
+                )}
+                <View style={styles.hostelDetails}>
+                  <Text style={styles.hostelName}>{item.name}</Text>
+                  <Text style={styles.hostelInfo}>Gender: {item.gender} | {totalRoomsLeft} Rooms Left</Text>
+                  <Text style={styles.hostelInfo}>From ${lowestPrice || 'N/A'} / month</Text>
+                  <Text style={styles.hostelInfo}>Room Types: {allTypes.map(rt => rt.type).join(', ')}</Text>
+                  <Text style={styles.hostelDesc}>{item.description}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
           contentContainerStyle={{ paddingBottom: 24 }}
         />
       )}

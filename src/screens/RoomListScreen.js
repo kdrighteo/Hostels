@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Animated, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Animated, SafeAreaView, ActivityIndicator, Image, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import colors from '../theme';
 import { db } from '../firebase';
@@ -71,14 +71,18 @@ export default function RoomListScreen({ route, navigation }) {
           accessibilityLabel={isAvailable ? `Book ${item.name}` : `${item.name} is taken`}
           activeOpacity={0.8}
         >
-          <MaterialIcons
-            name={isAvailable ? 'event-available' : 'event-busy'}
-            size={28}
-            color={isAvailable ? colors.success : colors.error}
-          />
+          {item.images && item.images.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 6 }}>
+              {item.images.map((url, idx) => (
+                <Image key={idx} source={{ uri: url }} style={{ width: 80, height: 60, borderRadius: 8, marginRight: 8, backgroundColor: '#eee' }} resizeMode="cover" />
+              ))}
+            </ScrollView>
+          )}
           <Text style={styles.roomName}>{item.name}</Text>
           <Text style={styles.roomType}>{item.type}</Text>
           <Text style={styles.occupancy}>{item.occupied} / {item.capacity}</Text>
+          {item.condition && <Text style={{ color: '#888', fontSize: 13, marginTop: 2 }}>Condition: {item.condition}</Text>}
+          {item.notes && <Text style={{ color: '#888', fontSize: 13, marginTop: 2 }}>Notes: {item.notes}</Text>}
         </TouchableOpacity>
       </Animated.View>
     );

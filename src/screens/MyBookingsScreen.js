@@ -13,7 +13,7 @@ const mockBookings = [
   { id: '3', room: 'Room A11', type: 'Double', status: 'Pending', paid: false },
 ];
 
-export default function MyBookingsScreen({ bookings: propBookings }) {
+export default function MyBookingsScreen({ navigation, bookings: propBookings }) {
   const { user } = useContext(UserContext);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +81,11 @@ export default function MyBookingsScreen({ bookings: propBookings }) {
               if (!room) console.warn('Room not found for booking:', item);
               if (!hostel) console.warn('Hostel not found for booking:', item);
               return (
-                <View style={styles.bookingCard}>
+                <TouchableOpacity
+                  style={styles.bookingCard}
+                  onPress={() => navigation.navigate('BookingDetails', { booking: item, room, hostel })}
+                  activeOpacity={0.8}
+                >
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <View style={styles.avatar}>
                       <Text style={styles.avatarText}>{(room?.name || item.room || item.roomId || '?')[0]}</Text>
@@ -104,7 +108,7 @@ export default function MyBookingsScreen({ bookings: propBookings }) {
                       <Text style={styles.manageText}>Manage Room</Text>
                     </TouchableOpacity>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             }}
             contentContainerStyle={{ paddingBottom: 24 }}

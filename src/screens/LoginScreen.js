@@ -5,7 +5,7 @@ import { useFonts } from 'expo-font';
 import { Inter_700Bold, Inter_500Medium, Inter_400Regular } from '@expo-google-fonts/inter';
 import { UserContext } from '../../App';
 import { db, auth } from '../firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, reload } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import Toast from 'react-native-toast-message';
 
@@ -96,6 +96,29 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const handleCheckVerification = async () => {
+    try {
+      const userCred = await signInWithEmailAndPassword(auth, registeredEmail, password);
+      await reload(userCred.user);
+      if (userCred.user.emailVerified) {
+        const userId = userCred.user.uid;
+        const userSnap = await getDoc(doc(db, 'users', userId));
+        if (!userSnap.exists()) {
+          Alert.alert('Login Error', 'User profile not found.');
+          return;
+        }
+        const userData = userSnap.data();
+        setUser({ id: userId, ...userData });
+        navigation.replace('MainTabs');
+        Toast.show({ type: 'success', text1: 'Email verified', text2: 'You are now logged in.' });
+      } else {
+        Toast.show({ type: 'error', text1: 'Still not verified', text2: 'Please check your email and try again.' });
+      }
+    } catch (err) {
+      Toast.show({ type: 'error', text1: 'Check failed', text2: err.message });
+    }
+  };
+
   const [fontsLoaded] = useFonts({
     Inter_700Bold,
     Inter_500Medium,
@@ -181,8 +204,11 @@ export default function LoginScreen({ navigation }) {
           {showVerify && (
             <View style={{ marginTop: 24, alignItems: 'center' }}>
               <Text style={{ color: colors.error, marginBottom: 8 }}>Please verify your email to continue.</Text>
-              <TouchableOpacity onPress={handleResendVerification} style={{ backgroundColor: colors.primary, padding: 10, borderRadius: 8 }}>
+              <TouchableOpacity onPress={handleResendVerification} style={{ backgroundColor: colors.primary, padding: 10, borderRadius: 8, marginBottom: 10 }}>
                 <Text style={{ color: '#fff', fontWeight: 'bold' }}>Resend Verification Email</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleCheckVerification} style={{ backgroundColor: colors.success, padding: 10, borderRadius: 8 }}>
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Check Verification</Text>
               </TouchableOpacity>
             </View>
           )}

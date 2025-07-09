@@ -20,22 +20,46 @@ export default function HostelDetailsScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container}>
-        {hostel.image && (
-          <Image source={{ uri: hostel.image }} style={styles.image} />
+        {hostel.images && hostel.images.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 18 }}>
+            {hostel.images.map((url, idx) => (
+              <Image key={idx} source={{ uri: url }} style={{ width: 220, height: 140, borderRadius: 12, marginRight: 12, backgroundColor: '#eee' }} resizeMode="cover" />
+            ))}
+          </ScrollView>
         )}
         <Text style={styles.name}>{hostel.name}</Text>
         <Text style={styles.desc}>{hostel.description}</Text>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Gender type:</Text>
+          <Text style={styles.infoLabel}>Gender:</Text>
           <Text style={styles.infoValue}>{hostel.gender}</Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Total rooms:</Text>
-          <Text style={styles.infoValue}>{hostel.totalRooms || 50}</Text>
+          <Text style={styles.infoLabel}>Rooms Left:</Text>
+          <Text style={styles.infoValue}>{hostel.roomsLeft || 'N/A'}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Price per Room:</Text>
+          <Text style={styles.infoValue}>${hostel.price || 'N/A'}</Text>
+        </View>
+        {/* Room Types Section */}
+        {hostel.roomTypes && hostel.roomTypes.length > 0 && (
+          <View style={{ marginBottom: 16 }}>
+            <Text style={[styles.infoLabel, { marginBottom: 4 }]}>Room Types:</Text>
+            {hostel.roomTypes.map((rt, idx) => (
+              <View key={idx} style={{ flexDirection: 'row', marginBottom: 2 }}>
+                <Text style={[styles.infoValue, { width: 120 }]}>{rt.type}:</Text>
+                <Text style={styles.infoValue}>${rt.price || 'N/A'} | {rt.roomsLeft || 0} left</Text>
+              </View>
+            ))}
+          </View>
+        )}
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Address:</Text>
+          <Text style={styles.infoValue}>{hostel.address}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Amenities:</Text>
-          <Text style={styles.infoValue}>{hostel.amenities || 'WiFi, Laundry, Security'}</Text>
+          <Text style={styles.infoValue}>{hostel.amenities}</Text>
         </View>
         <View style={{ height: 180, borderRadius: 12, overflow: 'hidden', marginBottom: 18 }}>
           <MapView

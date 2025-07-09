@@ -5,6 +5,9 @@ import { db } from '../firebase';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { mockHostels, mockRooms, mockBookings, mockPayments } from '../data/mockData';
 import Toast from 'react-native-toast-message';
+import * as ImagePicker from 'expo-image-picker';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const TABS = [
   { label: '📊 Overview', key: 'overview' },
@@ -39,6 +42,13 @@ export default function AdminDashboardScreen() {
   const [errorHostels, setErrorHostels] = useState(null);
   const [errorRooms, setErrorRooms] = useState(null);
   const [errorBookings, setErrorBookings] = useState(null);
+  const [hostelImages, setHostelImages] = useState([]);
+  const [roomImages, setRoomImages] = useState([]);
+  const [roomCondition, setRoomCondition] = useState('');
+  const [roomNotes, setRoomNotes] = useState('');
+  const [hostelDescription, setHostelDescription] = useState('');
+  const [hostelAmenities, setHostelAmenities] = useState('');
+  const [hostelAddress, setHostelAddress] = useState('');
 
   const mockAgents = [
     { id: 'a1', name: 'Agent Smith', email: 'agent1@hostel.com' },
@@ -79,12 +89,27 @@ export default function AdminDashboardScreen() {
   const openAddHostel = () => {
     setEditHostel(null);
     setHostelForm({ name: '', gender: '', rooms: '' });
+    setHostelImages([]);
+    setHostelDescription('');
+    setHostelAmenities('');
+    setHostelAddress('');
     setModalVisible(true);
   };
   const openEditHostel = (hostel) => {
     setEditHostel(hostel);
     setHostelForm({ name: hostel.name, gender: hostel.gender, rooms: String(hostel.rooms) });
+    setHostelImages(hostel.images || []);
+    setHostelDescription(hostel.description || '');
+    setHostelAmenities(hostel.amenities || '');
+    setHostelAddress(hostel.address || '');
     setModalVisible(true);
+  };
+  const pickHostelImages = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsMultipleSelection: true });
+    if (!result.canceled) {
+      const uris = result.assets ? result.assets.map(a => a.uri) : [result.uri];
+      setHostelImages([...hostelImages, ...uris]);
+    }
   };
   const saveHostel = async () => {
     if (!hostelForm.name || !hostelForm.gender || !hostelForm.rooms) {
@@ -93,11 +118,29 @@ export default function AdminDashboardScreen() {
     }
     setSavingHostel(true);
     try {
+      let imageUrls = [];
+      for (const uri of hostelImages) {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        const filename = `hostels/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
+        const storageRef = ref(storage, filename);
+        await uploadBytes(storageRef, blob);
+        const url = await getDownloadURL(storageRef);
+        imageUrls.push(url);
+      }
+      const hostelData = {
+        ...hostelForm,
+        rooms: Number(hostelForm.rooms),
+        images: imageUrls,
+        description: hostelDescription,
+        amenities: hostelAmenities,
+        address: hostelAddress,
+      };
       if (editHostel) {
-        await updateDoc(doc(db, 'hostels', editHostel.id), { ...hostelForm, rooms: Number(hostelForm.rooms) });
+        await updateDoc(doc(db, 'hostels', editHostel.id), hostelData);
         Toast.show({ type: 'success', text1: 'Hostel Updated' });
       } else {
-        await addDoc(collection(db, 'hostels'), { ...hostelForm, rooms: Number(hostelForm.rooms) });
+        await addDoc(collection(db, 'hostels'), hostelData);
         Toast.show({ type: 'success', text1: 'Hostel Added' });
       }
     } catch (err) {
@@ -105,6 +148,10 @@ export default function AdminDashboardScreen() {
     }
     setModalVisible(false);
     setSavingHostel(false);
+    setHostelImages([]);
+    setHostelDescription('');
+    setHostelAmenities('');
+    setHostelAddress('');
   };
   const deleteHostel = async (id) => {
     try {
@@ -137,6 +184,9 @@ export default function AdminDashboardScreen() {
   const openAddRoom = () => {
     setEditRoom(null);
     setRoomForm({ hostelId: '', name: '', type: '', price: '', capacity: '', occupied: '' });
+    setRoomImages([]);
+    setRoomCondition('');
+    setRoomNotes('');
     setRoomModalVisible(true);
   };
   const openEditRoom = (room) => {
@@ -149,7 +199,17 @@ export default function AdminDashboardScreen() {
       capacity: String(room.capacity),
       occupied: String(room.occupied),
     });
+    setRoomImages(room.images || []);
+    setRoomCondition(room.condition || '');
+    setRoomNotes(room.notes || '');
     setRoomModalVisible(true);
+  };
+  const pickRoomImages = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsMultipleSelection: true });
+    if (!result.canceled) {
+      const uris = result.assets ? result.assets.map(a => a.uri) : [result.uri];
+      setRoomImages([...roomImages, ...uris]);
+    }
   };
   const saveRoom = async () => {
     if (!roomForm.hostelId || !roomForm.name || !roomForm.type || !roomForm.price || !roomForm.capacity) {
@@ -158,11 +218,21 @@ export default function AdminDashboardScreen() {
     }
     setSavingRoom(true);
     try {
+      let imageUrls = [];
+      for (const uri of roomImages) {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        const filename = `rooms/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
+        const storageRef = ref(storage, filename);
+        await uploadBytes(storageRef, blob);
+        const url = await getDownloadURL(storageRef);
+        imageUrls.push(url);
+      }
       if (editRoom) {
-        await updateDoc(doc(db, 'rooms', editRoom.id), { ...roomForm, price: Number(roomForm.price), capacity: Number(roomForm.capacity), occupied: Number(roomForm.occupied) || 0 });
+        await updateDoc(doc(db, 'rooms', editRoom.id), { ...roomForm, price: Number(roomForm.price), capacity: Number(roomForm.capacity), occupied: Number(roomForm.occupied) || 0, images: imageUrls, condition: roomCondition, notes: roomNotes });
         Toast.show({ type: 'success', text1: 'Room Updated' });
       } else {
-        await addDoc(collection(db, 'rooms'), { ...roomForm, price: Number(roomForm.price), capacity: Number(roomForm.capacity), occupied: Number(roomForm.occupied) || 0 });
+        await addDoc(collection(db, 'rooms'), { ...roomForm, price: Number(roomForm.price), capacity: Number(roomForm.capacity), occupied: Number(roomForm.occupied) || 0, images: imageUrls, condition: roomCondition, notes: roomNotes });
         Toast.show({ type: 'success', text1: 'Room Added' });
       }
     } catch (err) {
@@ -170,6 +240,9 @@ export default function AdminDashboardScreen() {
     }
     setRoomModalVisible(false);
     setSavingRoom(false);
+    setRoomImages([]);
+    setRoomCondition('');
+    setRoomNotes('');
   };
   const deleteRoom = async (id) => {
     try {
@@ -230,13 +303,17 @@ export default function AdminDashboardScreen() {
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                   <View style={styles.hostelCard}>
-                    {item.image ? (
-                      <View style={{ alignItems: 'center', marginBottom: 8 }}>
-                        <Image source={{ uri: item.image }} style={{ width: 120, height: 80, borderRadius: 12, backgroundColor: '#eee' }} resizeMode="cover" />
+                    {item.images && item.images.length > 0 ? (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 }}>
+                        {item.images.map((url, idx) => (
+                          <Image key={idx} source={{ uri: url }} style={{ width: 120, height: 80, borderRadius: 12, backgroundColor: '#eee', marginRight: 8, marginBottom: 8 }} resizeMode="cover" />
+                        ))}
                       </View>
                     ) : null}
                     <Text style={styles.hostelName}>{item.name}</Text>
                     <Text style={styles.hostelInfo}>{item.address}</Text>
+                    <Text style={styles.hostelInfo}>{item.description}</Text>
+                    <Text style={styles.hostelInfo}>Amenities: {item.amenities}</Text>
                     <Text style={styles.hostelInfo}>Manager: {item.manager} | Phone: {item.phone}</Text>
                     <Text style={styles.hostelInfo}>Rooms: {rooms.filter(r => r.hostelId === item.id).length}</Text>
                     <View style={styles.hostelActions}>
@@ -276,6 +353,32 @@ export default function AdminDashboardScreen() {
                       onChangeText={v => setHostelForm(f => ({ ...f, rooms: v.replace(/[^0-9]/g, '') }))}
                       keyboardType="numeric"
                     />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Description"
+                      value={hostelDescription}
+                      onChangeText={setHostelDescription}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Amenities (comma separated)"
+                      value={hostelAmenities}
+                      onChangeText={setHostelAmenities}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Address"
+                      value={hostelAddress}
+                      onChangeText={setHostelAddress}
+                    />
+                    <TouchableOpacity style={styles.addBtn} onPress={pickHostelImages}>
+                      <Text style={styles.addBtnText}>+ Add Images</Text>
+                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
+                      {hostelImages.map((uri, idx) => (
+                        <Image key={idx} source={{ uri }} style={{ width: 60, height: 60, borderRadius: 8, marginRight: 8, marginBottom: 8 }} />
+                      ))}
+                    </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
                       <TouchableOpacity style={styles.saveBtn} onPress={saveHostel} accessible={true} accessibilityLabel={editHostel ? 'Save hostel changes' : 'Add hostel'} activeOpacity={0.7} disabled={savingHostel || !hostelForm.name || !hostelForm.gender || !hostelForm.rooms}>
                         <Text style={styles.saveBtnText}>{savingHostel ? 'Saving...' : 'Save'}</Text>
@@ -315,6 +418,11 @@ export default function AdminDashboardScreen() {
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                   <View style={styles.roomCard}>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 }}>
+                      {item.images && item.images.map((url, idx) => (
+                        <Image key={idx} source={{ uri: url }} style={{ width: 80, height: 60, borderRadius: 8, backgroundColor: '#eee', marginRight: 8, marginBottom: 8 }} resizeMode="cover" />
+                      ))}
+                    </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                       <Text style={styles.roomName}>{item.name}</Text>
                       <View style={{
@@ -333,6 +441,8 @@ export default function AdminDashboardScreen() {
                     <Text style={styles.roomInfo}>Hostel: {hostels.find(h => h.id === item.hostelId)?.name || 'N/A'}</Text>
                     <Text style={styles.roomInfo}>Type: {item.type} | Price: ${item.price}</Text>
                     <Text style={styles.roomInfo}>Capacity: {item.capacity} | Occupied: {item.occupied}</Text>
+                    {item.condition && <Text style={styles.roomInfo}>Condition: {item.condition}</Text>}
+                    {item.notes && <Text style={styles.roomInfo}>Notes: {item.notes}</Text>}
                     <View style={styles.hostelActions}>
                       <TouchableOpacity onPress={() => openEditRoom(item)}><Text style={styles.editBtn}>Edit</Text></TouchableOpacity>
                       <TouchableOpacity onPress={() => deleteRoom(item.id)}><Text style={styles.deleteBtn}>Delete</Text></TouchableOpacity>
@@ -400,6 +510,26 @@ export default function AdminDashboardScreen() {
                       value={roomForm.occupied}
                       onChangeText={v => setRoomForm(f => ({ ...f, occupied: v.replace(/[^0-9]/g, '') }))}
                       keyboardType="numeric"
+                    />
+                    <TouchableOpacity style={styles.addBtn} onPress={pickRoomImages}>
+                      <Text style={styles.addBtnText}>+ Add Images</Text>
+                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
+                      {roomImages.map((uri, idx) => (
+                        <Image key={idx} source={{ uri }} style={{ width: 60, height: 60, borderRadius: 8, marginRight: 8, marginBottom: 8 }} />
+                      ))}
+                    </View>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Room Condition (e.g. Clean, Needs Repair)"
+                      value={roomCondition}
+                      onChangeText={setRoomCondition}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Notes (optional)"
+                      value={roomNotes}
+                      onChangeText={setRoomNotes}
                     />
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
                       <TouchableOpacity style={styles.saveBtn} onPress={saveRoom} accessible={true} accessibilityLabel={editRoom ? 'Save room changes' : 'Add room'} activeOpacity={0.7} disabled={savingRoom || !roomForm.hostelId || !roomForm.name || !roomForm.type || !roomForm.price || !roomForm.capacity}>
