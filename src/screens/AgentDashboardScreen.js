@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView, ActivityIndicator } from 'react-native';
 import colors from '../theme';
 import { db } from '../firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
+import { UserContext } from '../../App';
 
 const TABS = [
   { label: '📋 Assigned Bookings', key: 'bookings' },
@@ -15,7 +18,8 @@ const mockAssignedBookings = [
   { id: 'b2', user: 'Bob', hostel: 'Addes Hostel', room: 'B2', status: 'Confirmed' },
 ];
 
-export default function AgentDashboardScreen() {
+export default function AgentDashboardScreen({ navigation }) {
+  const { setUser } = useContext(UserContext);
   const [activeTab, setActiveTab] = useState(0);
   const [assignedBookings, setAssignedBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,23 +41,34 @@ export default function AgentDashboardScreen() {
 
   const hasBookings = assignedBookings.length > 0;
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    setUser(null);
+    navigation.replace('Login');
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.tabRow}>
-          {TABS.map((tab, idx) => (
-            <TouchableOpacity
-              key={tab.key}
-              style={[styles.tab, activeTab === idx && styles.tabActive, idx === 0 && !hasBookings && { opacity: 0.5 }]}
-              onPress={() => hasBookings || idx !== 0 ? setActiveTab(idx) : null}
-              accessible={true}
-              accessibilityLabel={`Switch to ${tab.label} tab`}
-              activeOpacity={hasBookings || idx !== 0 ? 0.7 : 1}
-              disabled={idx === 0 && !hasBookings}
-            >
-              <Text style={[styles.tabText, activeTab === idx && styles.tabTextActive]}>{tab.label}</Text>
-            </TouchableOpacity>
-          ))}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={styles.tabRow}>
+            {TABS.map((tab, idx) => (
+              <TouchableOpacity
+                key={tab.key}
+                style={[styles.tab, activeTab === idx && styles.tabActive, idx === 0 && !hasBookings && { opacity: 0.5 }]}
+                onPress={() => hasBookings || idx !== 0 ? setActiveTab(idx) : null}
+                accessible={true}
+                accessibilityLabel={`Switch to ${tab.label} tab`}
+                activeOpacity={hasBookings || idx !== 0 ? 0.7 : 1}
+                disabled={idx === 0 && !hasBookings}
+              >
+                <Text style={[styles.tabText, activeTab === idx && styles.tabTextActive]}>{tab.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TouchableOpacity style={{ marginRight: 12, backgroundColor: colors.error, paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 }} onPress={handleLogout} accessible={true} accessibilityLabel="Logout" activeOpacity={0.7}>
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Logout</Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.content}>
           {activeTab === 0 && (

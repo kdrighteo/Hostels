@@ -1,10 +1,12 @@
-import React, { useState, createContext } from 'react';
+import React, { useState, createContext, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { View, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
+import { db } from './src/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import HostelDetailsScreen from './src/screens/HostelDetailsScreen';
@@ -31,6 +33,21 @@ export default function App() {
   });
 
   const [user, setUser] = useState(null); // null = not logged in
+
+  // Listen for user role changes in Firestore and update context only if changed
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = onSnapshot(doc(db, 'users', user.id), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        // Only update if role or other critical fields changed
+        if (user.role !== data.role) {
+          setUser((prev) => ({ ...prev, role: data.role }));
+        }
+      }
+    });
+    return () => unsub();
+  }, [user?.id, user?.role]);
 
   if (!fontsLoaded) {
     return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TextInput, Alert, SafeAreaView, Image, ActivityIndicator } from 'react-native';
 import colors from '../theme';
 import { db } from '../firebase';
@@ -8,6 +8,9 @@ import Toast from 'react-native-toast-message';
 import * as ImagePicker from 'expo-image-picker';
 import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
+import { UserContext } from '../../App';
 
 const TABS = [
   { label: '📊 Overview', key: 'overview' },
@@ -18,12 +21,12 @@ const TABS = [
   { label: '🧑‍💼 Agents', key: 'agents' }, // New tab for agent management
 ];
 
-export default function AdminDashboardScreen() {
+export default function AdminDashboardScreen({ navigation }) {
+  const { setUser, user } = useContext(UserContext);
   const [activeTab, setActiveTab] = useState(0);
   const [hostels, setHostels] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [payments, setPayments] = useState([]); // Placeholder for future
   const [loadingHostels, setLoadingHostels] = useState(true);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [loadingBookings, setLoadingBookings] = useState(true);
@@ -49,6 +52,8 @@ export default function AdminDashboardScreen() {
   const [hostelDescription, setHostelDescription] = useState('');
   const [hostelAmenities, setHostelAmenities] = useState('');
   const [hostelAddress, setHostelAddress] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const mockAgents = [
     { id: 'a1', name: 'Agent Smith', email: 'agent1@hostel.com' },
@@ -253,44 +258,58 @@ export default function AdminDashboardScreen() {
     }
   };
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    setUser(null);
+    navigation.replace('Login');
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.tabRow}>
-          {TABS.map((tab, idx) => (
-            <TouchableOpacity
-              key={tab.key}
-              style={[styles.tab, activeTab === idx && styles.tabActive]}
-              onPress={() => setActiveTab(idx)}
-              accessible={true}
-              accessibilityLabel={`Switch to ${tab.label} tab`}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.tabText, activeTab === idx && styles.tabTextActive]}>{tab.label}</Text>
-            </TouchableOpacity>
-          ))}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={styles.tabRow}>
+            {TABS.map((tab, idx) => {
+              // Split emoji and title
+              const [emoji, ...titleParts] = tab.label.split(' ');
+              const title = titleParts.join(' ');
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  style={[styles.tab, activeTab === idx && styles.tabActive]}
+                  onPress={() => setActiveTab(idx)}
+                  accessible={true}
+                  accessibilityLabel={`Switch to ${tab.label} tab`}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ fontSize: 28, textAlign: 'center' }}>{emoji}</Text>
+                  <Text style={[styles.tabText, { fontWeight: 'bold', fontSize: 14, marginTop: 2 }, activeTab === idx && styles.tabTextActive]}>{title}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
         <View style={styles.content}>
           {activeTab === 0 && (
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 16 }}>
-              <View style={styles.card}>
+              <TouchableOpacity style={styles.card} onPress={() => setActiveTab(1)} activeOpacity={0.8} accessibilityLabel="Go to Manage Hostels tab">
                 <Text style={styles.cardValue}>{hostels.length}</Text>
                 <Text style={styles.cardLabel}>Hostels</Text>
-              </View>
-              <View style={styles.card}>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.card} onPress={() => setActiveTab(2)} activeOpacity={0.8} accessibilityLabel="Go to Manage Rooms tab">
                 <Text style={styles.cardValue}>{rooms.length}</Text>
                 <Text style={styles.cardLabel}>Rooms</Text>
-              </View>
-              <View style={styles.card}>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.card} onPress={() => setActiveTab(3)} activeOpacity={0.8} accessibilityLabel="Go to Approve Bookings tab">
                 <Text style={styles.cardValue}>{bookings.filter(b => (b.status || '').trim().toLowerCase() === 'pending').length}</Text>
                 <Text style={styles.cardLabel}>Pending Bookings</Text>
-              </View>
-              <View style={styles.card}>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.card} onPress={() => setActiveTab(4)} activeOpacity={0.8} accessibilityLabel="Go to Payment Records tab">
                 <Text style={styles.cardValue}>
-                  ${payments.filter(p => p.status === 'paid').reduce((sum, p) => sum + (p.amount || 0), 0)}
+                  ${bookings.filter(b => b.paid).reduce((sum, b) => sum + (b.totalAmount || 0), 0)}
                 </Text>
                 <Text style={styles.cardLabel}>Total Paid</Text>
-              </View>
+              </TouchableOpacity>
             </View>
           )}
           {activeTab === 1 && (
@@ -591,39 +610,90 @@ export default function AdminDashboardScreen() {
             />
           )}
           {activeTab === 4 && (
-            <FlatList
-              data={payments}
-              keyExtractor={item => item.id}
-              renderItem={({ item }) => {
-                const booking = bookings.find(b => b.id === item.bookingId);
-                const userName = booking?.name || booking?.student || 'User';
-                const hostelName = hostels.find(h => h.id === booking?.hostelId)?.name || booking?.hostel || 'Hostel';
-                const status = (item.status || '').toLowerCase();
-                return (
-                  <View style={styles.paymentCard}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-                      <Text style={styles.paymentInfo}>{userName} - {hostelName}</Text>
-                      <View style={{
-                        marginLeft: 10,
-                        backgroundColor: status === 'paid' ? '#4CAF50' : '#FFC107',
-                        borderRadius: 6,
-                        paddingHorizontal: 8,
-                        paddingVertical: 2,
-                        alignSelf: 'flex-start',
-                      }}>
-                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </Text>
+            <>
+              <FlatList
+                data={bookings.filter(b => b.paid)}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => {
+                  const hostel = hostels.find(h => h.id === item.hostelId);
+                  const room = rooms.find(r => r.id === item.roomId);
+                  return (
+                    <TouchableOpacity
+                      style={styles.paymentCard}
+                      onPress={() => { setSelectedPayment({ booking: item, hostel, room }); setShowPaymentModal(true); }}
+                      activeOpacity={0.8}
+                      accessibilityLabel="View payment details"
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                        <Text style={styles.paymentInfo}>{item.name || item.student || 'User'} - {hostel?.name || item.hostel || 'Hostel'}</Text>
+                        <View style={{
+                          marginLeft: 10,
+                          backgroundColor: '#4CAF50',
+                          borderRadius: 6,
+                          paddingHorizontal: 8,
+                          paddingVertical: 2,
+                          alignSelf: 'flex-start',
+                        }}>
+                          <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>Paid</Text>
+                        </View>
                       </View>
+                      <Text style={styles.roomInfo}>Room: {room?.name || item.room || 'N/A'} ({room?.type || ''})</Text>
+                      <Text style={styles.roomInfo}>Amount: ${room?.price || 'N/A'}</Text>
+                      <Text style={styles.paymentDate}>Date: {item.date ? new Date(item.date).toLocaleString() : 'N/A'}</Text>
+                    </TouchableOpacity>
+                  );
+                }}
+                ListEmptyComponent={<Text style={styles.placeholder}>No payment records.</Text>}
+                contentContainerStyle={{ paddingBottom: 24 }}
+              />
+              {/* Payment Details Modal */}
+              {showPaymentModal && selectedPayment && (
+                <Modal
+                  visible={showPaymentModal}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={() => setShowPaymentModal(false)}
+                >
+                  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' }}>
+                    <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 28, width: 320 }}>
+                      <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.primary, marginBottom: 12 }}>Payment Details</Text>
+                      <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>User:</Text>
+                      <Text style={{ marginBottom: 8 }}>{selectedPayment.booking.name || selectedPayment.booking.student || 'User'}</Text>
+                      <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Hostel:</Text>
+                      <Text style={{ marginBottom: 8 }}>{selectedPayment.hostel?.name || selectedPayment.booking.hostel || 'Hostel'}</Text>
+                      <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Room:</Text>
+                      <Text style={{ marginBottom: 8 }}>{selectedPayment.room?.name || selectedPayment.booking.room || 'N/A'} ({selectedPayment.room?.type || ''})</Text>
+                      <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Amount:</Text>
+                      <Text style={{ marginBottom: 8 }}>${selectedPayment.room?.price || 'N/A'}</Text>
+                      <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Date:</Text>
+                      <Text style={{ marginBottom: 8 }}>{selectedPayment.booking.date ? new Date(selectedPayment.booking.date).toLocaleString() : 'N/A'}</Text>
+                      <TouchableOpacity
+                        style={{ backgroundColor: colors.error, paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginTop: 16 }}
+                        onPress={async () => {
+                          await updateDoc(doc(db, 'bookings', selectedPayment.booking.id), { paid: false });
+                          Toast.show({ type: 'success', text1: 'Payment Refunded', text2: 'Booking marked as unpaid.' });
+                          setShowPaymentModal(false);
+                        }}
+                        accessible={true}
+                        accessibilityLabel="Refund payment"
+                        activeOpacity={0.7}
+                      >
+                        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Refund Payment</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={{ marginTop: 12, alignItems: 'center' }}
+                        onPress={() => setShowPaymentModal(false)}
+                        accessible={true}
+                        accessibilityLabel="Close payment details"
+                        activeOpacity={0.7}
+                      >
+                        <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16 }}>Close</Text>
+                      </TouchableOpacity>
                     </View>
-                    <Text style={styles.roomInfo}>Amount: ${item.amount} | Method: {item.method}</Text>
-                    <Text style={styles.paymentDate}>Date: {item.date}</Text>
                   </View>
-                );
-              }}
-              ListEmptyComponent={<Text style={styles.placeholder}>No payment records.</Text>}
-              contentContainerStyle={{ paddingBottom: 24 }}
-            />
+                </Modal>
+              )}
+            </>
           )}
           {activeTab === 5 && (
             <View style={{ flex: 1 }}>
@@ -646,7 +716,7 @@ export default function AdminDashboardScreen() {
                             await updateDoc(doc(db, 'users', item.id), { role });
                             Toast.show({ type: 'success', text1: `Role changed to ${role}` });
                           }}
-                          disabled={item.role === role}
+                          disabled={item.role === role || (user && user.id === item.id)}
                         >
                           <Text style={{ color: item.role === role ? '#fff' : colors.primary, fontWeight: 'bold' }}>{role.charAt(0).toUpperCase() + role.slice(1)}</Text>
                         </TouchableOpacity>
@@ -656,6 +726,10 @@ export default function AdminDashboardScreen() {
                 )}
                 ListEmptyComponent={<Text style={{ color: colors.textSecondary }}>No users found.</Text>}
               />
+              {/* Logout button always visible under User Management */}
+              <TouchableOpacity style={{ marginTop: 24, alignSelf: 'center', backgroundColor: colors.error, paddingVertical: 12, paddingHorizontal: 32, borderRadius: 8 }} onPress={handleLogout} accessible={true} accessibilityLabel="Logout" activeOpacity={0.7}>
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Logout</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>

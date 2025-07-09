@@ -1,19 +1,56 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Modal, TextInput } from 'react-native';
 import colors from '../theme';
 import { UserContext } from '../../App';
-import { mockUser, mockBookings, mockHostels, mockRooms } from '../data/mockData';
-import { auth } from '../firebase';
+import { db, auth } from '../firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 
 export default function UserProfileScreen({ navigation }) {
   const { user, setUser } = useContext(UserContext);
   const [editVisible, setEditVisible] = useState(false);
-  const [editName, setEditName] = useState(user?.name || '');
-  const [editEmail, setEditEmail] = useState(user?.email || '');
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
   const [feedback, setFeedback] = useState('');
-  const [editInstitution, setEditInstitution] = useState(user?.institution || '');
-  const [editContact, setEditContact] = useState(user?.contactNumber || '');
+  const [editInstitution, setEditInstitution] = useState('');
+  const [editContact, setEditContact] = useState('');
+  // State for real bookings, hostels, rooms
+  const [userBookings, setUserBookings] = useState([]);
+  const [hostels, setHostels] = useState([]);
+  const [rooms, setRooms] = useState([]);
+
+  useEffect(() => {
+    if (user) {
+      setEditName(user?.name || '');
+      setEditEmail(user?.email || '');
+      setEditInstitution(user?.institution || '');
+      setEditContact(user?.contactNumber || '');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    // Bookings
+    const q = query(collection(db, 'bookings'), where('userId', '==', user.id));
+    const unsubBookings = onSnapshot(q, (snapshot) => {
+      setUserBookings(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    // Hostels
+    const unsubHostels = onSnapshot(collection(db, 'hostels'), (snapshot) => {
+      setHostels(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    // Rooms
+    const unsubRooms = onSnapshot(collection(db, 'rooms'), (snapshot) => {
+      setRooms(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    return () => {
+      unsubBookings();
+      unsubHostels();
+      unsubRooms();
+    };
+  }, [user?.id]);
+
+  if (!user) return null;
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -33,11 +70,6 @@ export default function UserProfileScreen({ navigation }) {
       setFeedback('');
     }, 1000);
   };
-
-  if (!user) return null;
-
-  // Get user's bookings
-  const userBookings = mockBookings.filter(b => b.userId === user.id);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -70,13 +102,18 @@ export default function UserProfileScreen({ navigation }) {
             <Text style={{ color: colors.textSecondary, fontStyle: 'italic' }}>No bookings yet.</Text>
           ) : (
             userBookings.map(b => {
-              const hostel = mockHostels.find(h => h.id === b.hostelId);
-              const room = mockRooms.find(r => r.id === b.roomId);
+              const hostel = hostels.find(h => h.id === b.hostelId);
+              const room = rooms.find(r => r.id === b.roomId);
               const status = (b.status || '').toLowerCase();
               return (
-                <View key={b.id} style={{ backgroundColor: colors.surface, borderRadius: 10, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }}>
+                <TouchableOpacity
+                  key={b.id}
+                  style={{ backgroundColor: colors.surface, borderRadius: 10, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }}
+                  onPress={() => navigation.navigate('BookingDetails', { booking: b, room, hostel })}
+                  activeOpacity={0.8}
+                >
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                    <Text style={{ fontWeight: 'bold', color: colors.textPrimary, fontFamily: 'Inter_500Medium' }}>{hostel?.name || 'Hostel'} - {room?.number || 'Room'}</Text>
+                    <Text style={{ fontWeight: 'bold', color: colors.textPrimary, fontFamily: 'Inter_500Medium' }}>{hostel?.name || 'Hostel'} - {room?.number || room?.name || 'Room'}</Text>
                     <View style={{
                       marginLeft: 10,
                       backgroundColor: status === 'approved' ? '#4CAF50' : status === 'pending' ? '#FFC107' : '#F44336',
@@ -89,7 +126,7 @@ export default function UserProfileScreen({ navigation }) {
                     </View>
                   </View>
                   <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular' }}>Date: {b.date}</Text>
-                </View>
+                </TouchableOpacity>
               );
             })
           )}
